@@ -1,0 +1,68 @@
+{
+  "Linux Builder reclient staging": {
+    "gn_args": {
+      "dcheck_always_on": false,
+      "ffmpeg_branding": "Chrome",
+      "is_component_build": false,
+      "is_debug": false,
+      "proprietary_codecs": true,
+      "use_rbe": true,
+      "use_remoteexec": true
+    }
+  },
+  "Linux Builder reclient test": {
+    "gn_args": {
+      "dcheck_always_on": false,
+      "ffmpeg_branding": "Chrome",
+      "is_component_build": false,
+      "is_debug": false,
+      "proprietary_codecs": true,
+      "use_rbe": true,
+      "use_remoteexec": true
+    }
+  },
+  "Simple Chrome reclient staging": {
+    "args_file": "//build/args/chromeos/arm-generic.gni",
+    "gn_args": {
+      "dcheck_always_on": false,
+      "is_chromeos_device": true,
+      "ozone_platform_headless": true,
+      "use_rbe": true,
+      "use_remoteexec": true
+    }
+  },
+  "Simple Chrome reclient test": {
+    "args_file": "//build/args/chromeos/arm-generic.gni",
+    "gn_args": {
+      "dcheck_always_on": false,
+      "is_chromeos_device": true,
+      "ozone_platform_headless": true,
+      "use_rbe": true,
+      "use_remoteexec": true
+    }
+  },
+  "Win x64 Builder reclient staging": {
+    "gn_args": {
+      "dcheck_always_on": false,
+      "ffmpeg_branding": "Chrome",
+      "is_component_build": false,
+      "is_debug": false,
+      "proprietary_codecs": true,
+      "symbol_level": 1,
+      "use_rbe": true,
+      "use_remoteexec": true
+    }
+  },
+  "Win x64 Builder reclient test": {
+    "gn_args": {
+      "dcheck_always_on": false,
+      "ffmpeg_branding": "Chrome",
+      "is_component_build": false,
+      "is_debug": false,
+      "proprietary_codecs": true,
+      "symbol_level": 1,
+      "use_rbe": true,
+      "use_remoteexec": true
+    }
+  }
+}
