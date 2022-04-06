@@ -45,7 +45,6 @@
 /ios
 /mojo
 /out
-/tools
 /tools_webrtc/android/profiling/flamegraph
 /tools_webrtc/android/profiling/simpleperf
 /tools_webrtc/audio_quality/linux/pesq
