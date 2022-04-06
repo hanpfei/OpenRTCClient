@@ -4,7 +4,26 @@
 
 import("//build/toolchain/toolchain.gni")
 
-default_clang_base_path = "//third_party/llvm-build/Release+Asserts"
+host_platform_ = ""
+
+if (host_os == "linux") {
+  host_platform_ = "linux"
+} else if (host_os == "mac") {
+  host_platform_ = "mac"
+}
+
+platform_ = ""
+if (is_win) {
+  platform_ = "win"
+} else if (is_mac) {
+  platform_ = "mac"
+} else if (is_linux) {
+  platform_ = "linux"
+} else if (is_android) {
+  platform_ = "android"
+}
+
+default_clang_base_path = "//../build_system/llvm-build/${host_platform_}/${platform_}/Release+Asserts"
 
 declare_args() {
   # Indicates if the build should use the Chrome-specific plugins for enforcing
