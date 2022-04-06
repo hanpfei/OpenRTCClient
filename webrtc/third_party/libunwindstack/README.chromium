@@ -1,0 +1,131 @@
+Name: libunwindstack
+URL: https://android.googlesource.com/platform/system/core
+Revision: a7b4c5d25aebc2c7e6156473dae98238c029e630
+Date: March 31, 2020
+License: Apache 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+Canonical library to unwind Android call stacks.
+
+libunwindstack (and its relevant dependencies) are copied from Android's
+system/core. libunwindstack handles many of the details of unwinding on Android,
+which is inherently more difficult than on other platforms due to the wider
+variety of frame types that occur on Android. These include Java frames, JITted
+Java frames, Chrome C++ frames, and system library C++ frames. Different frame
+types can have different call frame information (CFI) formats that the unwinder
+must parse to know how to move up the stack. These formats include DWARF,
+MiniDebugInfo, and EHABI. libunwindstack handles much of this complexity.
+
+libunwindstack is copied from the Android tree and utilizes common Android
+libraries from that tree. This is analagous to how a static library that is
+built within the Chromium tree might utilize //base and //threading. For
+libunwindstack, we copy its Android tree dependencies into this directory.
+
+Further complicating matters, Chrome is built against a much older version of
+the Android NDK than this version of libunwindstack, which targets Android tip
+of tree. The local modifications made allow libunwindstack to compile against
+Chrome's older version of the NDK.
+
+Steps to update libunwindstack:
+
+1. Update the contents to the upstream revision.
+
+   git checkout master && git pull -q
+   git checkout -b update && git cl upstream master
+   rm -rf src
+   tools/copy_libunwindstack_sources.py <upstream_git_tag>
+   # ... manually update the revision info in README.chromium ...
+   git add --all
+   git commit -m 'step 1'
+
+2. Build and apply/update/add patches until the code compiles. Update existing
+   patches so that they apply cleanly. Remove any patches that are no longer
+   required. Assumes out/Debug is configured for an Android component build.
+
+   (cd ../.. && autoninja -C out/Debug libstack_unwinder.cr.so)
+   patch -p1 < patches/...  # etc.
+
+   # Remove remnants of failed patch attempts.
+   find src -name \*.orig -o -name \*.rej | xargs rm
+   git add --all
+   git commit -m 'step 2'
+
+3. Prune to the subset of libunwindstack sources that should be compiled and
+   checked in.
+
+   tools/get_required_sources.sh out/Debug > required_sources
+
+   # Replace BUILD.gn 'public' files with these:
+   grep src/libunwindstack/include required_sources | sed 's/.*/    "&",/'
+
+   # Replace BUILD.gn 'sources' files with these:
+   grep -v 'src/libunwindstack/include\|\.S$' required_sources | \
+     sed 's/.*/    "&",/'
+
+   # Remove unused files.
+   find src -type f | sort | comm -2 -3 - required_sources | xargs rm
+   find src -depth -type d -empty -exec rmdir \{\} \;
+   rm required_sources
+   git add -u src
+   git commit -m 'step 3'
+
+4. Prepare CLs to land the changes. Using `git rebase -i master` reorder the
+   commits as
+
+     step 1
+     step 3
+     step 2
+
+   and squash the step 3 commit into step 1.
+
+   Land a CL with step1, which contains the upstream libunwindstack changes to
+   the files we need. After landing `master` will be in a noncompiling state.
+
+   Land a CL with step2, which contains the Chrome-specific changes required to
+   build libunwindstack.
+
+
+Local modifications:
+- Android's base/ directory is renamed android-base/.
+- 0002-disable-ftw.patch:
+
+  The `TemporaryDir` destructor uses the `nftw` function, which isn't available
+  in Android NDK version 16 (it was first made available in 17, as per
+  https://bit.ly/2MSMlt5). `TemporaryDir` is unused by libunwindstack, though,
+  so we safely disable the call.
+
+- 0003-remove-file-logging.patch:
+
+  Stubs out PLOG() in android-base/file.cpp, which allows us to remove the
+  dependency on android-base/logging.cpp. logging.cpp is problematic because it
+  attempts to use BSD's getprogname(), which isn't available in Android NDK
+  version 16 (it was first made available in 21, as per https://bit.ly/2nX0nBs).
+
+- 0004-gnu-basename.patch:
+
+  Adds a short implementation of the non-modifying GNU basename() function
+  which isn't available in Android NDK version 16 (it was first made available
+  in 23, as per https://bit.ly/31Gkyl9). We call this function `compat_basename`.
+
+  Although there's a POSIX basename() available via <libgen.h>, that function
+  has different behavior with regards to trailing slashes and can also modify
+  its argument under some circumstances.
+
+- 0005-disable-fdsan.patch:
+
+  Disables fdsan on unique_fd.h. fdsan isn't available in Android NDK version 16
+  (it was first made available in 29, as per https://bit.ly/2W4II7E).
+
+- 0006-memory-process-vm-readv.patch:
+
+  Uses syscall() to call process_vm_readv instead of the process_vm_readv()
+  function, which isn't available in Android NDK 16 (it was first made available
+  in 23, as per https://bit.ly/3412rb7). The syscall() version was already
+  available, as per https://bit.ly/32Tnyvy.
+
+- 0007-create-local-process-memory.patch:
+
+  Exposes an interface to create and return a Memory subclass for reading local
+  process memory, as a unique_ptr.

@@ -1,0 +1,23 @@
+diff --git a/src/android-base/file.cpp b/src/android-base/file.cpp
+index 6321fc624..f36fe9a73 100644
+--- a/src/android-base/file.cpp
++++ b/src/android-base/file.cpp
+@@ -43,11 +43,17 @@
+ #define OS_PATH_SEPARATOR '/'
+ #endif
+ 
+-#include "android-base/logging.h"  // and must be after windows.h for ERROR
+ #include "android-base/macros.h"   // For TEMP_FAILURE_RETRY on Darwin.
+ #include "android-base/unique_fd.h"
+ #include "android-base/utf8.h"
+ 
++class FakeLog {
++ public:
++  FakeLog operator<<(const char*) { return *this; }
++  operator bool() { return false; }
++};
++#define PLOG(x) false && FakeLog()
++
+ namespace {
+ 
+ #ifdef _WIN32

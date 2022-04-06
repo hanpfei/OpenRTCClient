@@ -1,0 +1,87 @@
+diff --git a/src/compat/compat/compat.cc b/src/compat/compat/compat.cc
+new file mode 100644
+index 000000000..7a671e007
+--- /dev/null
++++ b/src/compat/compat/compat.cc
+@@ -0,0 +1,14 @@
++// Copyright 2019 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include <string.h>
++
++const char* compat_basename(const char* file) {
++  // Implementation based off of the one in <android-base/logging.cpp>.
++  const char* last_slash = strrchr(file, '/');
++  if (last_slash != nullptr) {
++    return last_slash + 1;
++  }
++  return file;
++}
+diff --git a/src/compat/compat/compat.h b/src/compat/compat/compat.h
+new file mode 100644
+index 000000000..7fbc5d158
+--- /dev/null
++++ b/src/compat/compat/compat.h
+@@ -0,0 +1,19 @@
++// Copyright 2019 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef COMPAT_COMPAT_H_
++#define COMPAT_COMPAT_H_
++
++// Provides functions that are available in libunwindstack's normal build
++// environment (platform/system/core, built at Android ToT) but unavailable in
++// libunwindstack's build environment within Chrome (currenty built at Android
++// NDK 16).
++
++// Replicates the non-modifying GNU basename() function available in <string.h>
++// that was introduced in Android NDK 23: https://bit.ly/31Gkyl9. We rename the
++// function to avoid colliding with any existing basename() functions defined at
++// the global scope.
++const char* compat_basename(const char* file);
++
++#endif  // COMPAT_COMPAT_H_
+diff --git a/src/libunwindstack/Global.cpp b/src/libunwindstack/Global.cpp
+index ee6c8a593..68818e416 100644
+--- a/src/libunwindstack/Global.cpp
++++ b/src/libunwindstack/Global.cpp
+@@ -21,6 +21,7 @@
+ #include <string>
+ #include <vector>
+ 
++#include <compat/compat.h>
+ #include <unwindstack/Global.h>
+ #include <unwindstack/MapInfo.h>
+ #include <unwindstack/Maps.h>
+@@ -48,7 +49,7 @@ bool Global::Searchable(const std::string& name) {
+     return false;
+   }
+ 
+-  const char* base_name = basename(name.c_str());
++  const char* base_name = compat_basename(name.c_str());
+   for (const std::string& lib : search_libs_) {
+     if (base_name == lib) {
+       return true;
+diff --git a/src/libunwindstack/Unwinder.cpp b/src/libunwindstack/Unwinder.cpp
+index 1bb031947..d5d9022ac 100644
+--- a/src/libunwindstack/Unwinder.cpp
++++ b/src/libunwindstack/Unwinder.cpp
+@@ -27,6 +27,7 @@
+ #include <android-base/stringprintf.h>
+ #include <android-base/strings.h>
+ 
++#include <compat/compat.h>
+ #include <unwindstack/Elf.h>
+ #include <unwindstack/JitDebug.h>
+ #include <unwindstack/MapInfo.h>
+@@ -203,7 +204,7 @@ void Unwinder::Unwind(const std::vector<std::string>* initial_map_names_to_skip,
+     FrameData* frame = nullptr;
+     if (map_info == nullptr || initial_map_names_to_skip == nullptr ||
+         std::find(initial_map_names_to_skip->begin(), initial_map_names_to_skip->end(),
+-                  basename(map_info->name.c_str())) == initial_map_names_to_skip->end()) {
++                  compat_basename(map_info->name.c_str())) == initial_map_names_to_skip->end()) {
+       if (regs_->dex_pc() != 0) {
+         // Add a frame to represent the dex file.
+         FillInDexFrame();

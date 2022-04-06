@@ -1,0 +1,27 @@
+diff --git a/src/libunwindstack/Memory.cpp b/src/libunwindstack/Memory.cpp
+index 8de3d9808..94b911d83 100644
+--- a/src/libunwindstack/Memory.cpp
++++ b/src/libunwindstack/Memory.cpp
+@@ -186,6 +187,10 @@ std::unique_ptr<Memory> Memory::CreateFileMemory(const std::string& path, uint64
+   return nullptr;
+ }
+ 
++std::unique_ptr<Memory> Memory::CreateLocalProcessMemory() {
++  return std::unique_ptr<Memory>(new MemoryLocal());
++}
++
+ std::shared_ptr<Memory> Memory::CreateProcessMemory(pid_t pid) {
+   if (pid == getpid()) {
+     return std::shared_ptr<Memory>(new MemoryLocal());
+diff --git a/src/libunwindstack/include/unwindstack/Memory.h b/src/libunwindstack/include/unwindstack/Memory.h
+index 310656497..8ec91f83c 100644
+--- a/src/libunwindstack/include/unwindstack/Memory.h
++++ b/src/libunwindstack/include/unwindstack/Memory.h
+@@ -31,6 +31,7 @@ class Memory {
+   Memory() = default;
+   virtual ~Memory() = default;
+ 
++  static std::unique_ptr<Memory> CreateLocalProcessMemory();
+   static std::shared_ptr<Memory> CreateProcessMemory(pid_t pid);
+   static std::shared_ptr<Memory> CreateProcessMemoryCached(pid_t pid);
+   static std::shared_ptr<Memory> CreateOfflineMemory(const uint8_t* data, uint64_t start,

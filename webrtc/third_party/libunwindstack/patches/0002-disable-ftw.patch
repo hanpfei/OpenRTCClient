@@ -1,0 +1,28 @@
+diff --git a/src/android-base/file.cpp b/src/android-base/file.cpp
+index 6321fc624..3cc7b27b8 100644
+--- a/src/android-base/file.cpp
++++ b/src/android-base/file.cpp
+@@ -18,7 +18,6 @@
+ 
+ #include <errno.h>
+ #include <fcntl.h>
+-#include <ftw.h>
+ #include <libgen.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -171,6 +170,7 @@ TemporaryDir::TemporaryDir() {
+ TemporaryDir::~TemporaryDir() {
+   if (!remove_dir_and_contents_) return;
+ 
++#if 0  // Requires __ANDROID_API__ >= 17.
+   auto callback = [](const char* child, const struct stat*, int file_type, struct FTW*) -> int {
+     switch (file_type) {
+       case FTW_D:
+@@ -197,6 +197,7 @@ TemporaryDir::~TemporaryDir() {
+   };
+ 
+   nftw(path, callback, 128, FTW_DEPTH | FTW_MOUNT | FTW_PHYS);
++#endif
+ }
+ 
+ bool TemporaryDir::init(const std::string& tmp_dir) {
