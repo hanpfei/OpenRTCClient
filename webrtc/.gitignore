@@ -41,7 +41,6 @@
 .sw?
 /Makefile
 /base
-/buildtools
 /ios
 /mojo
 /out
