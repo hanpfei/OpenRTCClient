@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+base_dir=$(dirname "$0")
+python3 $base_dir/build.py "$@"

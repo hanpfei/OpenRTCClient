@@ -1,1 +1,3 @@
 build/
+build_system/__pycache__/
+build_system/sysroot/linux/debian_sid_amd64-sysroot/

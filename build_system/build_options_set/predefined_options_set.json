@@ -1,0 +1,51 @@
+{
+  "mac": [
+    "target_os = \"mac\"",
+    "clang_use_chrome_plugins = false",
+    "mac_deployment_target = \"10.10\"",
+    "use_xcode_clang = false",
+    "use_custom_libcxx = false",
+    "enable_iterator_debugging = false",
+    "enable_libaom = false",
+    "enable_libaom_decoder = false"
+  ],
+  "linux": [
+    "target_os = \"linux\"",
+    "clang_use_chrome_plugins = false",
+    "use_custom_libcxx = false",
+    "use_gold = false",
+    "enable_libaom = true"
+  ],
+  "ios": [
+    "target_os = \"ios\"",
+    "clang_base_path = \"\"",
+    "clang_use_chrome_plugins = false",
+    "enable_dsyms = true",
+    "enable_ios_bitcode = false",
+    "ios_deployment_target = \"10.0\"",
+    "ios_enable_code_signing = false",
+    "use_custom_libcxx = false",
+    "use_goma = false",
+    "use_xcode_clang = true",
+    "enable_libaom = false",
+    "enable_libaom_decoder = false"
+  ],
+  "win": [
+    "target_os = \"win\"",
+    "clang_use_chrome_plugins = false",
+    "use_custom_libcxx = false",
+    "enable_libaom = false",
+    "enable_libaom_decoder = false"
+  ],
+  "android": [
+    "target_os = \"android\"",
+    "android_ndk_root = \"{ANDROID_NDK}\"",
+    "android_sdk_root = \"{ANDROID_SDK}\"",
+    "clang_use_chrome_plugins = false",
+    "lint_android_sdk_root = \"{ANDROID_SDK}\"",
+    "use_custom_libcxx = false",
+    "use_sysroot = false",
+    "enable_libaom = false",
+    "enable_libaom_decoder = false"
+  ]
+}
