@@ -40,7 +40,6 @@
 .settings
 .sw?
 /Makefile
-/base
 /ios
 /mojo
 /out
