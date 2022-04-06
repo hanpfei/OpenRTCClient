@@ -66,7 +66,6 @@
 /cros_system_api
 /custom_tabs_client/src
 /cygwin
-/dav1d/libdav1d
 /dawn
 /depot_tools
 /devtools-frontend/src
@@ -127,7 +126,6 @@
 /khronos_glcts
 /leveldatabase/src
 /leveldb
-/libaom/source/libaom
 /libaddressinput/src
 /libassistant
 /libavif/src
@@ -145,7 +143,6 @@
 /libsync/src
 /libupnp
 /libunwindstack
-/libvpx/source/libvpx
 /libwebm/source
 /lighttpd
 /llvm
