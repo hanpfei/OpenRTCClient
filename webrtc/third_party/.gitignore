@@ -114,7 +114,6 @@
 /harfbuzz-ng/src
 /highway/src
 /hunspell_dictionaries
-/icu
 /icu4j/lib/
 /instrumented_libraries/scripts/*.tgz
 /instrumented_libraries/scripts/out/*
@@ -140,7 +139,6 @@
 /libprotobuf-mutator/src
 /libipp/libipp
 /libjingle/source
-/libjpeg_turbo
 /libjxl/src
 /liblouis/src
 /libphonenumber/dist
