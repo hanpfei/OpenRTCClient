@@ -1983,7 +1983,7 @@ if (enable_java_templates) {
         "--depfile",
         rebase_path(depfile, root_build_dir),
         "--android-sdk-cmdline-tools",
-        rebase_path("${public_android_sdk_root}/cmdline-tools/latest",
+        rebase_path("${android_sdk_root}/cmdline-tools/latest",
                     root_build_dir),
         "--root-manifest",
         rebase_path(invoker.input_manifest, root_build_dir),
