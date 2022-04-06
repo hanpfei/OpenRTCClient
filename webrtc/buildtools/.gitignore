@@ -9,9 +9,6 @@ mac/.versions
 mac/clang-format
 mac/gn
 reclient
-third_party/libc++/trunk
-third_party/libc++abi/trunk
-third_party/libunwind/trunk
 win/.versions
 win/clang-format.exe
 win/gn.exe
