@@ -45,7 +45,6 @@
 /ios
 /mojo
 /out
-/testing
 /tools
 /tools_webrtc/android/profiling/flamegraph
 /tools_webrtc/android/profiling/simpleperf
