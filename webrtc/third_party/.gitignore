@@ -79,7 +79,6 @@
 /expat/src
 /eyesfree/src
 /farmhash/src
-/ffmpeg
 /flac
 /flatbuffers/src
 /fontconfig/src
@@ -173,7 +172,6 @@
 /nss
 /objenesis/lib/
 /omaha/src/omaha
-/openh264/src
 /openscreen/src
 /openxr/src
 /ots/src
@@ -231,7 +229,6 @@
 /ub-uiautomator/lib
 /ukey2/src
 /usb_ids
-/usrsctp/usrsctplib
 /v8-i18n
 /valgrind
 /vulkan-deps
