@@ -166,7 +166,6 @@
 /mocha
 /mockito/src
 /nacl_sdk_binaries/
-/nasm
 /nearby/src
 /neon_2_sse/src
 /netty-tcnative/src
