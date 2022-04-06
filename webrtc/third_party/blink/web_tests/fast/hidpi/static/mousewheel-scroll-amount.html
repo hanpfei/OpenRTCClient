@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<script src="../../../resources/gesture-util.js"></script>
+<script src="../../../resources/testharness.js"></script>
+<script src="../../../resources/testharnessreport.js"></script>
+
+<style type="text/css">
+    body {
+        height: 2000px;
+        width: 2000px;
+    }
+</style>
+
+<script>
+async function reset() {
+    document.scrollingElement.scrollTop = 0;
+    document.scrollingElement.scrollLeft = 0;
+    await waitForCompositorCommit();
+}
+
+var position = {x: 20, y: 20};
+promise_test(async () => {
+    await reset();
+    await wheelTick(0, 1, position);
+    await waitForAnimationEndTimeBased( () => {
+        return document.scrollingElement.scrollTop;
+    });
+    assert_equals(document.scrollingElement.scrollLeft, 0);
+    assert_equals(document.scrollingElement.scrollTop, pixelsPerTick());
+}, "One vertical wheel tick scrolls the right number of pixels in high dpi mode.");
+
+promise_test(async () => {
+    await reset();
+    await wheelTick(1, 0, position);
+    await waitForAnimationEndTimeBased( () => {
+        return document.scrollingElement.scrollLeft;
+    });
+    assert_equals(document.scrollingElement.scrollLeft, pixelsPerTick());
+    assert_equals(document.scrollingElement.scrollTop, 0);
+}, "One horizontal wheel tick scrolls the right number of pixels in high dpi mode.");
+
+promise_test(async () => {
+    await reset();
+    await wheelTick(0, 2, position);
+    await waitForAnimationEndTimeBased( () => {
+        return document.scrollingElement.scrollTop;
+    });
+    assert_equals(document.scrollingElement.scrollLeft, 0);
+    assert_equals(document.scrollingElement.scrollTop, 2 * pixelsPerTick());
+}, "Two vertical wheel ticks scroll the right number of pixels in high dpi mode.");
+
+promise_test(async () => {
+    await reset();
+    await wheelTick(2, 0, position);
+    await waitForAnimationEndTimeBased( () => {
+        return document.scrollingElement.scrollLeft;
+    });
+    assert_equals(document.scrollingElement.scrollLeft, 2 * pixelsPerTick());
+    assert_equals(document.scrollingElement.scrollTop, 0);
+}, "Two horizontal wheel ticks scroll the right number of pixels in high dpi mode.");
+</script>

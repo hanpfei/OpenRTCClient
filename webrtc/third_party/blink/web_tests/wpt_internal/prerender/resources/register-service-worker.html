@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<script src="/resources/testharness.js"></script>
+<script src="/service-workers/service-worker/resources/test-helpers.sub.js"></script>
+<script src="/speculation-rules/prerender/resources/utils.js"></script>
+<body>
+<script>
+const params = new URLSearchParams(location.search);
+const uid = params.get('uid');
+
+const SCOPE = './';
+const WORKER_URL = `./register-service-worker.js?uid=${uid}`;
+
+// This page tests behavior of a service worker before activation, so it should
+// never be activated.
+document.onprerenderingchange = () => assert_not_reached();
+
+async function unregisterServiceWorker(scope) {
+  const registration = await navigator.serviceWorker.getRegistration(scope);
+  if (!registration)
+    return;
+  return registration.unregister();
+}
+
+async function registerServiceWorker() {
+  assert_true(document.prerendering);
+
+  await unregisterServiceWorker(SCOPE);
+  const registration =
+      await navigator.serviceWorker.register(WORKER_URL, {scope: SCOPE});
+
+  const workerChannel = new PrerenderChannel('worker-channel', uid);
+  const message = await new Promise(resolve => {
+    workerChannel.onmessage = resolve;
+    workerChannel.postMessage('ping');
+  });
+  workerChannel.close();
+  await registration.unregister();
+
+  const bc = new PrerenderChannel('prerender-channel', uid);
+  bc.postMessage(message.data);
+  bc.close();
+}
+
+registerServiceWorker();
+</script>
+</body>

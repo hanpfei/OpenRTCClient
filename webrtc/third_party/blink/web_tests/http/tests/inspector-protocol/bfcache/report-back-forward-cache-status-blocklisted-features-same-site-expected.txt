@@ -1,0 +1,26 @@
+Test that back/forward navigations report the bfcache status
+{
+    frameId : <string>
+    loaderId : <string>
+    notRestoredExplanations : [
+        [0] : {
+            reason : IdleManager
+            type : SupportPending
+        }
+        [1] : {
+            reason : BrowsingInstanceNotSwapped
+            type : Circumstantial
+        }
+    ]
+}
+{
+    frameId : <string>
+    loaderId : <string>
+    notRestoredExplanations : [
+        [0] : {
+            reason : BrowsingInstanceNotSwapped
+            type : Circumstantial
+        }
+    ]
+}
+
