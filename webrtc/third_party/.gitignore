@@ -16,7 +16,6 @@
 /android_build_tools/art/lib/*.so
 /android_build_tools/art/profman
 /android_build_tools/bundletool/*.jar
-/android_ndk/
 /android_prebuilts/build_tools
 /android_protobuf/src
 /android_sdk/androidx_browser/src
@@ -58,7 +57,6 @@
 /chromite
 /cld_2/src
 /cld_3/src
-/colorama/src
 /cros
 /cros_system_api
 /custom_tabs_client/src
@@ -138,7 +136,6 @@
 /libphonenumber/dist
 /libsync/src
 /libupnp
-/libunwindstack
 /libwebm/source
 /lighttpd
 /llvm
@@ -223,7 +220,6 @@
 /tflite/src
 /tint/src
 /tsan/
-/turbine/*.jar
 /ub-uiautomator/lib
 /ukey2/src
 /usb_ids
