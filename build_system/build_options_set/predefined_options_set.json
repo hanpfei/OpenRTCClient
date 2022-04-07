@@ -2,7 +2,7 @@
   "mac": [
     "target_os = \"mac\"",
     "clang_use_chrome_plugins = false",
-    "mac_deployment_target = \"10.10\"",
+    "mac_deployment_target = \"10.11.0\"",
     "use_xcode_clang = false",
     "use_custom_libcxx = false",
     "enable_iterator_debugging = false",
