@@ -26,7 +26,9 @@ import textwrap
 import os
 import re
 import shutil
+import stat
 import subprocess
+import sys
 import zipfile
 
 # Assume this script is stored under third_party/android_deps/
@@ -48,7 +50,10 @@ _BUILD_GRADLE = 'build.gradle'
 # Location of the android_deps libs directory relative to custom 'android_deps' directory.
 _LIBS_DIR = 'libs'
 
-_GN_PATH = os.path.join(_CHROMIUM_SRC, 'third_party', 'depot_tools', 'gn')
+if sys.platform == "darwin":
+  _GN_PATH = os.path.join(_CHROMIUM_SRC, '..', 'build_system/tools/bin/mac', 'gn')
+else:
+  _GN_PATH = os.path.join(_CHROMIUM_SRC, '..', 'build_system/tools/bin/linux', 'gn')
 
 _GRADLEW = os.path.join(_CHROMIUM_SRC, 'third_party', 'gradle_wrapper',
                         'gradlew')
@@ -457,10 +462,11 @@ def main():
                         default=0,
                         action='count',
                         help='Verbose level (multiple times for more)')
+
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.WARNING - 10 * args.verbose_count,
+        level=logging.INFO - 10 * args.verbose_count,
         format='%(levelname).1s %(relativeCreated)6d %(message)s')
     debug = args.verbose_count >= 2
 
@@ -483,6 +489,16 @@ def main():
              build_android_deps_dir,
              _CUSTOM_ANDROID_DEPS_FILES,
              src_path_must_exist=is_primary_android_deps)
+
+        per_files = [_BUILD_GRADLE, _BUILD_GN, _ADDITIONAL_README_PATHS]
+        for file_path in per_files:
+            file_abs_path = os.path.join(build_android_deps_dir, file_path)
+            os.chmod(file_abs_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP
+                 | stat.S_IROTH)
+
+            file_abs_path = os.path.join(args.android_deps_dir, file_path)
+            os.chmod(file_abs_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP
+                 | stat.S_IROTH)
 
         subprojects = _ParseSubprojects(
             os.path.join(args.android_deps_dir, 'subprojects.txt'))

@@ -155,6 +155,7 @@ def generate_solution(config):
   prepare_gen_common(config)
   if config.target_os == "android":
     prepare_gen_android(config)
+    prepare_build_android(config)
   if config.target_os == "linux":
     prepare_gen_linux(config)
 
@@ -169,9 +170,6 @@ def generate_solution(config):
 
 
 def build_solution(config):
-  if config.target_os == "android":
-    prepare_build_android(config)
-
   cmd = "{0} -C {1} {2} {3} {4}".format(config.ninja_bin_path, config.build_dir,
                                         config.build_target, "-v" if config.verbos_build else "",
                                         " -j {}".format(

@@ -67,6 +67,14 @@ def run_cmd(cmd, show_output=True):
     return ret
 
 
+def run_cmd_with_args(cmd, show_output=True):
+    if show_output:
+        print(cmd)
+    import subprocess
+
+    subprocess.run(cmd, check=True)
+
+
 def run_or_die(cmd, show_output=True):
     if run_cmd(cmd, show_output) != 0:
         print("CMD: {} fail".format(cmd))

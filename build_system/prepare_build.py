@@ -4,7 +4,10 @@ import json
 import os
 import sys
 import tarfile
-from utils import run_cmd
+from utils import run_cmd, run_cmd_with_args
+
+
+_ANDROIDX_PATH = os.path.normpath(os.path.join(__file__, '..', '..', 'webrtc', 'third_party', 'androidx'))
 
 
 def download_repo_version(repo_local_path, repo_url, version):
@@ -236,6 +239,9 @@ def prepare_build_android(config):
             return
 
     fetch_all_deps_script_path = os.path.join(config.webrtc_path, "third_party/android_deps/fetch_all.py")
-    run_cmd(fetch_all_deps_script_path)
 
-
+    fetch_all_cmd = [
+        fetch_all_deps_script_path, '--android-deps-dir', _ANDROIDX_PATH,
+        '--ignore-vulnerabilities'
+    ]
+    run_cmd_with_args(fetch_all_cmd)
