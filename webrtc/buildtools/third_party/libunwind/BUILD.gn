@@ -32,6 +32,7 @@ source_set("libunwind") {
   } else if (is_android) {
     visibility += [ "//buildtools/third_party/libc++abi" ]
     visibility += [ "//services/tracing/public/cpp" ]
+    visibility += [ "*" ]
   }
   if (!is_component_build) {
     defines = [ "_LIBUNWIND_DISABLE_VISIBILITY_ANNOTATIONS" ]
