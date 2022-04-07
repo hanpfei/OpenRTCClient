@@ -133,6 +133,50 @@ def prepare_gen_android(config):
     config.android_build_tools_ver = select_build_tools()
 
 
+def _merge_sysroot_packages(sysroot_path):
+    debian_sysroot_package = os.path.join(sysroot_path, "debian_sid_amd64-sysroot.tgz0*")
+    sysroot_packages = glob.glob(debian_sysroot_package)
+    sysroot_packages.sort()
+
+    total_size = 0
+    for pkg in sysroot_packages:
+        filesize = os.path.getsize(pkg)
+        total_size = total_size + filesize
+        print(filesize, ", ", total_size)
+
+    debian_sysroot_package = os.path.join(sysroot_path, "debian_sid_amd64-sysroot.tgz")
+    if os.path.exists(debian_sysroot_package) and os.path.getsize(debian_sysroot_package) == total_size:
+        return debian_sysroot_package
+
+    if os.path.exists(debian_sysroot_package):
+        os.remove(debian_sysroot_package)
+
+    debian_sysroot_package = os.path.join(sysroot_path, "debian_sid_amd64-sysroot.tgz")
+    with open(debian_sysroot_package, "wb") as final_pkg_file:
+        for pkg in sysroot_packages:
+            filesize = os.path.getsize(pkg)
+            with open(pkg, "rb") as pkg_file:
+                write_file_size = 0
+                while write_file_size < filesize:
+                    #print(filesize, " ", write_file_size)
+                    write_size = 0
+                    if write_file_size + 1024 * 256 < filesize:
+                        write_size = 1024 * 256
+                    else:
+                        write_size = filesize - write_file_size
+
+                    data = pkg_file.read(write_size)
+                    final_pkg_file.write(data)
+                    write_file_size = write_file_size + write_size
+
+    if os.path.exists(debian_sysroot_package) and os.path.getsize(debian_sysroot_package) == total_size:
+        return debian_sysroot_package
+
+    print(os.path.getsize(debian_sysroot_package), ", ", total_size)
+
+    return "invalid_file"
+
+
 def prepare_linux_sysroot(config):
     sysroot_path = os.path.join(config.root_path, "build_system/sysroot/linux")
     debian_sysroot_path = os.path.join(sysroot_path, "debian_sid_amd64-sysroot")
@@ -140,7 +184,7 @@ def prepare_linux_sysroot(config):
     if os.path.exists(debian_sysroot_path):
         return
 
-    debian_sysroot_package = os.path.join(sysroot_path, "debian_sid_amd64-sysroot.tgz")
+    debian_sysroot_package = _merge_sysroot_packages(sysroot_path)
 
     print("debian_sysroot_package " + debian_sysroot_package)
     if not os.path.exists(debian_sysroot_package):
