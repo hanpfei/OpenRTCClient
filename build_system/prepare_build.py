@@ -225,11 +225,11 @@ def prepare_build_android(config):
     os.environ["JAVA_HOME"] = java_home
 
     check_candidates = [
-        os.path.join(config.webrtc_path, "third_party/android_deps/libs/android_arch_core_common/*.jar"),
-        os.path.join(config.webrtc_path, "third_party/android_deps/libs/androidx_media_media/*.aar"),
-        os.path.join(config.webrtc_path, "third_party/android_deps/libs/androidx_core_core/*.aar"),
-        os.path.join(config.webrtc_path, "third_party/android_deps/libs/com_android_support_loader/*.aar"),
-        os.path.join(config.webrtc_path, "third_party/android_deps/libs/com_google_guava_guava/*.jar"),
+        os.path.join(config.webrtc_path, "third_party/androidx/libs/androidx_collection_collection/*.jar"),
+        os.path.join(config.webrtc_path, "third_party/androidx/libs/androidx_core_core/*.aar"),
+        os.path.join(config.webrtc_path, "third_party/androidx/libs/androidx_cardview_cardview/*.aar"),
+        os.path.join(config.webrtc_path, "third_party/androidx/libs/androidx_sqlite_sqlite/*.aar"),
+        os.path.join(config.webrtc_path, "third_party/androidx/libs/androidx_constraintlayout_constraintlayout_core/*.jar"),
     ]
 
     for check_item in check_candidates:
