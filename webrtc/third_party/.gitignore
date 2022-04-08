@@ -112,7 +112,6 @@
 /jdk/current
 /jdk/extras/java_8
 /jsr-305/src
-/junit/src
 /khronos_glcts
 /leveldatabase/src
 /leveldb
