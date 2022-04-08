@@ -1,0 +1,13 @@
+Name: Core Kotlin Extensions
+Short Name: core-ktx
+URL: https://developer.android.com/jetpack/androidx/releases/core#1.8.0-SNAPSHOT
+Version: 1.8.0-SNAPSHOT
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+Kotlin extensions for 'core' artifact
+
+Local Modifications:
+No modifications.

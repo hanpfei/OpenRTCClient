@@ -1,0 +1,13 @@
+Name: Android ConstraintLayout
+Short Name: constraintlayout
+URL: http://tools.android.com
+Version: 2.1.0-beta02
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+ConstraintLayout for Android
+
+Local Modifications:
+No modifications.

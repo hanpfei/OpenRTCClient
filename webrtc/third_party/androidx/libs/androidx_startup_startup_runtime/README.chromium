@@ -1,0 +1,13 @@
+Name: Android App Startup Runtime
+Short Name: startup-runtime
+URL: https://developer.android.com/jetpack/androidx/releases/startup#1.2.0-SNAPSHOT
+Version: 1.2.0-SNAPSHOT
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+Android App Startup Runtime
+
+Local Modifications:
+No modifications.

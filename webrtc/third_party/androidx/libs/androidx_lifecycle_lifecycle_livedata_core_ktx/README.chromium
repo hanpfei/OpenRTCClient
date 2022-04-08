@@ -1,0 +1,13 @@
+Name: LiveData Core Kotlin Extensions
+Short Name: lifecycle-livedata-core-ktx
+URL: https://developer.android.com/jetpack/androidx/releases/lifecycle#2.5.0-SNAPSHOT
+Version: 2.5.0-SNAPSHOT
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+Kotlin extensions for 'livedata-core' artifact
+
+Local Modifications:
+No modifications.

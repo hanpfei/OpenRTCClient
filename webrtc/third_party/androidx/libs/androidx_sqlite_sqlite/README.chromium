@@ -1,0 +1,13 @@
+Name: Android DB
+Short Name: sqlite
+URL: https://developer.android.com/jetpack/androidx/releases/sqlite#2.3.0-SNAPSHOT
+Version: 2.3.0-SNAPSHOT
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+Android DB
+
+Local Modifications:
+No modifications.

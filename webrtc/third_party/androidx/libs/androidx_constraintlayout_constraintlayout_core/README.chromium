@@ -1,0 +1,13 @@
+Name: Android ConstraintLayout Core
+Short Name: constraintlayout-core
+URL: http://tools.android.com
+Version: 1.0.0-beta02
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+ConstraintLayout core
+
+Local Modifications:
+No modifications.

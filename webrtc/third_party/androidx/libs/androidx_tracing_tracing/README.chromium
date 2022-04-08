@@ -1,0 +1,13 @@
+Name: Android Tracing
+Short Name: tracing
+URL: https://developer.android.com/jetpack/androidx/releases/tracing#1.1.0-SNAPSHOT
+Version: 1.1.0-SNAPSHOT
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+Android Tracing
+
+Local Modifications:
+No modifications.

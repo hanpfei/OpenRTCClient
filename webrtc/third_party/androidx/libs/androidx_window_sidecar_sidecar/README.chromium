@@ -1,0 +1,13 @@
+Name: Jetpack WindowManager library Sidecar
+Short Name: sidecar
+URL: https://developer.android.com/jetpack/androidx/releases/window-sidecar#1.0.0-SNAPSHOT
+Version: 1.0.0-SNAPSHOT
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+This version of the OEM extension is deprecated. Please use window:extensions:extensions.module instead.
+
+Local Modifications:
+No modifications.

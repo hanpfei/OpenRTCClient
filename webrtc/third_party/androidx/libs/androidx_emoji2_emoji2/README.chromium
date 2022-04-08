@@ -1,0 +1,13 @@
+Name: Android Emoji2 Compat
+Short Name: emoji2
+URL: https://developer.android.com/jetpack/androidx/releases/emoji2#1.1.0-SNAPSHOT
+Version: 1.1.0-SNAPSHOT
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+Core library to enable emoji compatibility in Kitkat and newer devices to avoid the empty emoji characters.
+
+Local Modifications:
+No modifications.

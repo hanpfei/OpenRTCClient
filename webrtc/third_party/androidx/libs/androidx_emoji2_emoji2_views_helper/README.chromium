@@ -1,0 +1,13 @@
+Name: Android Emoji2 Compat view helpers
+Short Name: emoji2-views-helper
+URL: https://developer.android.com/jetpack/androidx/releases/emoji2#1.1.0-SNAPSHOT
+Version: 1.1.0-SNAPSHOT
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+View helpers for Emoji2
+
+Local Modifications:
+No modifications.

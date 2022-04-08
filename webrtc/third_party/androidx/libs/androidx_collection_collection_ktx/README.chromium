@@ -1,0 +1,13 @@
+Name: Collections Kotlin Extensions
+Short Name: collection-ktx
+URL: https://developer.android.com/jetpack/androidx/releases/collection#1.3.0-SNAPSHOT
+Version: 1.3.0-SNAPSHOT
+License: Apache Version 2.0
+License File: LICENSE
+Security Critical: yes
+
+Description:
+Kotlin extensions for 'collection' artifact
+
+Local Modifications:
+No modifications.
