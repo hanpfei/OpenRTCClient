@@ -55,11 +55,8 @@ def prepare_dynamic_common_gn_args(config):
     clang_base_path = os.path.join(clang_base_path, "Release+Asserts")
   elif config.is_mac:
     clang_base_path = os.path.join(clang_base_path, "mac")
-    if config.target_os == "mac" or config.target_os == "ios":
-      clang_base_path = os.path.join(clang_base_path, "mac")
-      clang_base_path = os.path.join(clang_base_path, "Release+Asserts")
-    elif config.target_os == "android":
-      clang_base_path = os.path.join(os.environ.get("ANDROID_NDK", "").replace("\\", "/"), "toolchains/llvm/prebuilt/darwin-x86_64")
+    clang_base_path = os.path.join(clang_base_path, "mac")
+    clang_base_path = os.path.join(clang_base_path, "Release+Asserts")
   elif config.is_linux:
     clang_base_path = os.path.join(clang_base_path, "linux")
     if config.target_os == "linux":
@@ -143,7 +140,7 @@ def get_generator(config):
     generator = ""
     if config.is_windows:
       generator = "vs"
-    elif config.is_mac:
+    elif config.is_mac and not config.target_os == "android":
       generator = "xcode"
   return generator
 

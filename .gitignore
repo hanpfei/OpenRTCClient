@@ -2,6 +2,7 @@
 .gclient
 .project
 .pydevproject
+.DS_Store
 .settings/
 /build/
 build_system/__pycache__/
