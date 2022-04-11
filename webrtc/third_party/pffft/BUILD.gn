@@ -7,13 +7,14 @@ import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 
 config("common_config") {
-  cflags = [ "-Wno-shadow" ]
-
   if (is_win) {
+    cflags = [ ]
     defines = [
       # Required to use math constants from math.h.
       "_USE_MATH_DEFINES",
     ]
+  } else {
+    cflags = [ "-Wno-shadow" ]
   }
 
   # PFFFT doesn't support SIMD on some cpus, so build a scalar version.

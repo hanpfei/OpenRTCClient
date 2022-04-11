@@ -38,7 +38,7 @@
     "use_custom_libcxx = false",
     "enable_libaom = false",
     "enable_libaom_decoder = false",
-    "rtc_use_h264 = true"
+    "rtc_use_h264 = false"
   ],
   "android": [
     "target_os = \"android\"",
