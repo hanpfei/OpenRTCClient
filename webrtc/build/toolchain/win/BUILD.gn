@@ -195,6 +195,7 @@ template("msvc_toolchain") {
       show_includes = "/showIncludes:user"
     } else {
       show_includes = "/showIncludes"
+      show_includes = ""
     }
 
     tool("cc") {
@@ -524,8 +525,8 @@ template("win_toolchains") {
     }
 
     sys_include_flags = "${win_toolchain_data.include_flags_imsvc}"
-    sys_lib_flags =
-        "-libpath:$_clang_lib_dir ${win_toolchain_data.libpath_flags}"
+    #sys_lib_flags =
+    #    "-libpath:$_clang_lib_dir ${win_toolchain_data.libpath_flags}"
 
     toolchain_args = {
       if (defined(invoker.toolchain_args)) {
