@@ -2,6 +2,7 @@
 import glob
 import json
 import os
+import shutil
 import sys
 import tarfile
 from utils import run_cmd, run_cmd_with_args
@@ -76,13 +77,26 @@ def prepare_cmdline_tools():
     java_home = os.environ["JAVA_HOME"]
     os.environ["JAVA_HOME"] = os.environ["JAVA_8_HOME"]
 
-    cmdline_tools_dir = os.path.join(cmdline_tools_dir, "latest")
-    if not os.path.exists(cmdline_tools_dir):
+    latest_cmdline_tools_dir = os.path.join(cmdline_tools_dir, "latest")
+    if not os.path.exists(latest_cmdline_tools_dir):
         print("Try to install build-tools latest")
         cmd = "{0}/tools/bin/sdkmanager --install \"cmdline-tools;{1}\"".format(
             sdk_path, "latest"
             )
         run_cmd(cmd)
+
+    required_jars = {
+        "latest/lib/build-system/manifest-merger.jar" : "latest/lib/build-system/tools.manifest-merger.jar",
+        "latest/lib/common/common.jar" : "latest/lib/common/tools.common.jar",
+        "latest/lib/sdk-common/sdk-common.jar" : "latest/lib/sdk-common/tools.sdk-common.jar",
+        "latest/lib/sdklib/sdklib.jar" : "latest/lib/sdklib/tools.sdklib.jar"
+    }
+
+    for required_jar, src_jar in required_jars.items():
+        required_jar_path = os.path.join(cmdline_tools_dir, required_jar)
+        src_jar_path = os.path.join(cmdline_tools_dir, src_jar)
+        if not os.path.exists(required_jar_path) and os.path.exists(src_jar_path):
+            shutil.copyfile(src_jar_path, required_jar_path)
 
     os.environ["JAVA_HOME"] = java_home
 
