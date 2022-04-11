@@ -18,6 +18,9 @@ DISABLE_ASYNC = os.environ.get('DISABLE_ASYNC') == '1'
 if DISABLE_ASYNC:
   logging.warning('Running in synchronous mode.')
 
+if sys.platform == 'darwin':
+  DISABLE_ASYNC = True
+
 _all_pools = None
 _is_child_process = False
 _silence_exceptions = False

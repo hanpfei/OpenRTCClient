@@ -117,7 +117,10 @@ class TaskManager:
     # Include load avg so that a small dip in the number of currently running
     # processes will not cause new tasks to be started while the overall load is
     # heavy.
-    cur_load = max(self._num_running_processes(), os.getloadavg()[0])
+    if sys.platform == 'darwin':
+      cur_load = 3
+    else:
+      cur_load = max(self._num_running_processes(), os.getloadavg()[0])
     num_started = 0
     # Always start a task if we don't have any running, so that all tasks are
     # eventually finished. Try starting up tasks when the overall load is light.
@@ -304,6 +307,9 @@ def _process_requests(sock: socket.socket):
 def main():
   parser = argparse.ArgumentParser(description=__doc__)
   parser.parse_args()
+  if sys.platform == 'darwin' and os.path.exists(server_utils.SOCKET_ADDRESS):
+    print("Remove exist unix domain socket ", server_utils.SOCKET_ADDRESS)
+    os.remove(server_utils.SOCKET_ADDRESS)
   with socket.socket(socket.AF_UNIX) as sock:
     sock.bind(server_utils.SOCKET_ADDRESS)
     sock.listen()

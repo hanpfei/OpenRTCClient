@@ -6,10 +6,14 @@ import contextlib
 import json
 import os
 import socket
+import sys
 
 # Use a unix abstract domain socket:
 # https://man7.org/linux/man-pages/man7/unix.7.html#:~:text=abstract:
-SOCKET_ADDRESS = '\0chromium_build_server_socket'
+if sys.platform == 'darwin':
+  SOCKET_ADDRESS = '/tmp/chromium_build_server_socket'
+else:
+  SOCKET_ADDRESS = '\0chromium_build_server_socket'
 BUILD_SERVER_ENV_VARIABLE = 'INVOKED_BY_BUILD_SERVER'
 
 
