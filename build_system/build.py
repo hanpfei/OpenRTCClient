@@ -59,10 +59,7 @@ def prepare_dynamic_common_gn_args(config):
     clang_base_path = os.path.join(clang_base_path, "Release+Asserts")
   elif config.is_linux:
     clang_base_path = os.path.join(clang_base_path, "linux")
-    if config.target_os == "linux":
-      clang_base_path = os.path.join(clang_base_path, "linux")
-    elif config.target_os == "android":
-      clang_base_path = os.path.join(clang_base_path, "android")
+    clang_base_path = os.path.join(clang_base_path, "linux")
     clang_base_path = os.path.join(clang_base_path, "Release+Asserts")
 
   add_feature('clang_base_path = "{}"\n'.format(clang_base_path), config)
