@@ -60,6 +60,33 @@ def prepare_gen_common(config):
         download_repo_version(repo_local_path, repo_url, version)
 
 
+def prepare_cmdline_tools():
+    """
+        Install cmdline-tools.
+    """
+    sdk_path = os.environ.get("ANDROID_SDK", None)
+    if not sdk_path or not os.path.exists(sdk_path) or not os.path.isdir(sdk_path):
+        print("Please set ANDROID_SDK environment variable point to a valid android sdk directory")
+        sys.exit(-1)
+
+    cmdline_tools_dir = os.path.join(sdk_path, "cmdline-tools")
+    cmdline_tools_dir = os.path.abspath(cmdline_tools_dir)
+    # tools/bin/sdkmanager need java 8.
+    # Suppose java point to java 8 here
+    java_home = os.environ["JAVA_HOME"]
+    os.environ["JAVA_HOME"] = os.environ["JAVA_8_HOME"]
+
+    cmdline_tools_dir = os.path.join(cmdline_tools_dir, "latest")
+    if not os.path.exists(cmdline_tools_dir):
+        print("Try to install build-tools latest")
+        cmd = "{0}/tools/bin/sdkmanager --install \"cmdline-tools;{1}\"".format(
+            sdk_path, "latest"
+            )
+        run_cmd(cmd)
+
+    os.environ["JAVA_HOME"] = java_home
+
+
 def select_build_tools():
     """
         Select a max one or install 31.0.0
@@ -133,6 +160,7 @@ def reset_android_ndk_env_if_needed():
 def prepare_gen_android(config):
     reset_android_ndk_env_if_needed()
 
+    prepare_cmdline_tools()
     config.android_build_tools_ver = select_build_tools()
 
 
