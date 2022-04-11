@@ -147,7 +147,7 @@ def select_build_tools():
 
     os.environ["JAVA_HOME"] = java_home
 
-    return result
+    return result, selected_build_tools_path
 
 
 def reset_android_ndk_env_if_needed():
@@ -175,7 +175,8 @@ def prepare_gen_android(config):
     reset_android_ndk_env_if_needed()
 
     prepare_cmdline_tools()
-    config.android_build_tools_ver = select_build_tools()
+    config.android_build_tools_ver, selected_build_tools_path = select_build_tools()
+    config.android_sdk_tools_bundle_aapt2_dir = selected_build_tools_path
 
 
 def _merge_sysroot_packages(sysroot_path):

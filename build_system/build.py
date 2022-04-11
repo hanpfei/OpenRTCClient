@@ -69,6 +69,8 @@ def prepare_dynamic_common_gn_args(config):
 
   if config.target_os == "android":
     add_feature('android_sdk_build_tools_version = "{}"\n'.format(config.android_build_tools_ver), config)
+    if config.is_mac:
+      add_feature('android_sdk_tools_bundle_aapt2_dir = "{}"\n'.format(config.android_sdk_tools_bundle_aapt2_dir), config)
 
 
 def prepare_predefined_gn_args(config):
