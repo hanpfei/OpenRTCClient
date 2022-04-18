@@ -89,7 +89,7 @@ def die_with_status(status, additional_msg=None, script_path=None):
         print(additional_msg)
         print("")
     print(
-        "Usage: sp_go command[:target] target_os target_cpu [build_type] [build_options_set] [dir] [generator]")
+        "Usage: webrtc_build command[:target] target_os target_cpu [build_type] [build_options_set] [dir] [generator]")
     print("\t command:      gen|build|clean|info")
     print("\t target_os:    win|mac|ios|android|linux")
     print("\t target_cpu:   x86|x64|arm|arm64")
@@ -100,6 +100,6 @@ def die_with_status(status, additional_msg=None, script_path=None):
     print("")
     print('It is strongly recommended that you put "{}"'
           '\ninto your system environment variable PATH '
-          'so that you can run sp_go anywhere'.format(script_path))
+          'so that you can run webrtc_build anywhere'.format(script_path))
     print("")
     sys.exit(-1)

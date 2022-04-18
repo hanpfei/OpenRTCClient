@@ -396,7 +396,7 @@ def die_with_print_usage(status, additional_msg=None, script_path=None):
         print(additional_msg)
         print("")
     print(
-        "Usage: sp_pack target_os build_type")
+        "Usage: webrtc_pack target_os build_type")
     print("\t target_os:    win|mac|ios|android|linux")
     print("\t build_type:   debug|release, by default is release")
     print('\t options_set:  build_options_set name you want to build, by default the file name is "default.conf"')
@@ -404,7 +404,7 @@ def die_with_print_usage(status, additional_msg=None, script_path=None):
     print("")
     print('It is strongly recommended that you put "{}"'
           '\ninto your system environment variable PATH '
-          'so that you can run sp_go anywhere'.format(script_path))
+          'so that you can run webrtc_pack anywhere'.format(script_path))
     print("")
     sys.exit(-1)
 
