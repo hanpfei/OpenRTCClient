@@ -1,3 +1,5 @@
+这个仓库包含了 WebRTC 的源码，构建 WebRTC SDK 所需的大部分构建工具，如 LLVM，以及一套主要用 Python 编写的简单构建系统。
+
 这套构建系统支持在 Mac 平台上为 Mac、iOS 和 Android 编译 WebRTC SDK，支持在 Windows 平台上为 Windows 编译 WebRTC SDK，支持在 Linux 平台上为 Linux 和 Android 编译 WebRTC SDK。
 
 构建系统中预埋了大部分构建过程所需的工具，WebRTC 依赖的许多 Git Repo 也以源码的形式提交进了 webrtc/ 目录下，因而通过这套构建系统无需执行 `gclient` 等命令来同步依赖。这套构建系统用一个统一的命令 `webrtc_build` 作为入口，以一种统一的方式支持各个主机平台上不同目标系统平台 WebRTC SDK 的构建。
