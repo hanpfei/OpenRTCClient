@@ -109,13 +109,13 @@ LIB_REGEX_TO_LICENSES_DICT = {
 def FindSrcDirPath():
     """Returns the abs path to the src/ dir of the project."""
     src_dir = os.path.dirname(os.path.abspath(__file__))
-    while os.path.basename(src_dir) != 'src':
+    while os.path.basename(src_dir) != 'src' and src_dir != '/':
         src_dir = os.path.normpath(os.path.join(src_dir, os.pardir))
     return src_dir
 
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
-WEBRTC_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
+WEBRTC_ROOT = os.path.join(os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir)), "webrtc")
 SRC_DIR = FindSrcDirPath()
 sys.path.append(os.path.join(SRC_DIR, 'build'))
 import find_depot_tools
