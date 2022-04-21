@@ -12,9 +12,83 @@
 
 using namespace std;
 
+class Conductor : public MainWndCallback {
+public:
+  Conductor(GtkMainWnd *main_window);
+  virtual ~Conductor();
+
+  void InitializeLoopConnectCall() override;
+  void GetCaptureDeviceList() override;
+  void StartLoopConnectCall(size_t capture_device_index) override;
+  void StopLoopConnectCall() override;
+  void UIThreadCallback(int msg_id, void *data) override;
+
+private:
+  GtkMainWnd *main_window_;
+  std::shared_ptr<LoopCallSesstion> loop_call_session_;
+};
+
+Conductor::Conductor(GtkMainWnd *main_window) : main_window_(main_window) {
+  main_window_->RegisterObserver(this);
+}
+
+Conductor::~Conductor() { main_window_->RegisterObserver(nullptr); }
+
+void Conductor::InitializeLoopConnectCall() {
+  if (!loop_call_session_) {
+    loop_call_session_ = std::make_shared<LoopCallSesstion>();
+  } else {
+    main_window_->MessageBox("Message", "Loop call has not been initialized",
+                             true);
+  }
+  printf("Start to initialize.\n");
+}
+
+void Conductor::GetCaptureDeviceList() {
+  if (!loop_call_session_) {
+    main_window_->MessageBox("Message", "Loop call has not been initialized",
+                             true);
+    return;
+  }
+  std::vector<std::string> devices;
+  if (!CaptureVideoTrackSource::GetCaptureDeviceList(devices)) {
+    main_window_->MessageBox("Message", "Get capture device list failed", true);
+  } else {
+    main_window_->ShowCaptureDeviceList(devices);
+  }
+  printf("To get capture device list.\n");
+}
+
+void Conductor::StartLoopConnectCall(size_t capture_device_index) {
+  if (loop_call_session_) {
+    loop_call_session_->StartLoopCall(capture_device_index);
+
+    main_window_->SwitchToStreamingUI();
+
+    auto remote_video_track = loop_call_session_->GetRemoteVideoTrack();
+    main_window_->StartRemoteRenderer(remote_video_track.get());
+    printf("Start loop call remote video track %p.\n",
+           remote_video_track.get());
+  } else {
+    main_window_->MessageBox("Message", "Loop call has not been initialized",
+                             true);
+  }
+}
+
+void Conductor::StopLoopConnectCall() {
+  if (loop_call_session_) {
+    loop_call_session_->StopLoopCall();
+  } else {
+    main_window_->MessageBox("Message", "Loop call has not been initialized",
+                             true);
+  }
+  printf("Stop loop call.\n");
+}
+
+void Conductor::UIThreadCallback(int msg_id, void *data) {}
+
 int main(int argc, char *argv[]) {
-  //  auto loop_call_session = std::make_shared<LoopCallSesstion>();
-  //  loop_call_session->StartLoopCall();
+  rtc::LogMessage::SetLogToStderr(false);
 
   gtk_init(&argc, &argv);
 // g_type_init API is deprecated (and does nothing) since glib 2.35.0, see:
@@ -28,14 +102,16 @@ int main(int argc, char *argv[]) {
   g_thread_init(NULL);
 #endif
 
-  GtkMainWnd wnd("1234", 80, false, false);
+  GtkMainWnd wnd;
   wnd.Create();
+
+  std::shared_ptr<Conductor> conductor = std::make_shared<Conductor>(&wnd);
 
   while (true) {
     while (gtk_events_pending()) {
       gtk_main_iteration();
     }
-    if(!wnd.IsWindow()) {
+    if (!wnd.IsWindow()) {
       break;
     }
   }

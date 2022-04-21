@@ -40,7 +40,11 @@ bool FindBestMatchCapability(
 }
 } // namespace
 
-CaptureVideoTrackSource::~CaptureVideoTrackSource() = default;
+CaptureVideoTrackSource::~CaptureVideoTrackSource() {
+  if (vcm_ && vcm_->CaptureStarted()) {
+    vcm_->StopCapture();
+  }
+}
 
 void CaptureVideoTrackSource::SetState(SourceState new_state) {
   if (state_ != new_state) {
@@ -66,6 +70,7 @@ void CaptureVideoTrackSource::RemoveSink(
 }
 
 void CaptureVideoTrackSource::OnFrame(const webrtc::VideoFrame &frame) {
+  printf("CaptureVideoTrackSource::OnFrame()\n");
   int cropped_width = 0;
   int cropped_height = 0;
   int out_width = 0;
@@ -168,4 +173,31 @@ CaptureVideoTrackSource::Create(size_t capture_device_index, size_t width,
     return nullptr;
   }
   return capture_video_source;
+}
+
+bool CaptureVideoTrackSource::GetCaptureDeviceList(
+    std::vector<std::string> &devices) {
+  std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
+      webrtc::VideoCaptureFactory::CreateDeviceInfo());
+  if (!info) {
+    fprintf(stderr, "Cannot create video capture device info\n");
+    return false;
+  }
+  uint32_t num_devices = info->NumberOfDevices();
+  if (num_devices == 0) {
+    fprintf(stderr, "No capture device found\n");
+    return false;
+  }
+
+  for (uint32_t i = 0; i < num_devices; ++i) {
+    char device_name[256] = {0};
+    char unique_name[256] = {0};
+    if (info->GetDeviceName(static_cast<uint32_t>(i), device_name,
+                            sizeof(device_name), unique_name,
+                            sizeof(unique_name)) == 0) {
+      devices.emplace_back(std::string(device_name));
+    }
+  }
+
+  return !devices.empty();
 }

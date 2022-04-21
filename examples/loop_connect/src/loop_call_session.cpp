@@ -113,13 +113,13 @@ void LoopCallSesstion::CreateConnections() {
   // DTLS SRTP has to be disabled for loopback to work.
   config.enable_dtls_srtp = false;
 
-  send_observer_ = std::make_unique<ConnectionObserver>();
+  send_observer_ = std::make_unique<ConnectionObserver>("SendConn");
   webrtc::PeerConnectionDependencies pc_dependencies(send_observer_.get());
   send_connection_ =
       pcf_->CreatePeerConnection(config, std::move(pc_dependencies));
   fprintf(stdout, "Send PeerConnection created: %p\n", send_connection_.get());
 
-  recv_observer_ = std::make_unique<ConnectionObserver>();
+  recv_observer_ = std::make_unique<ConnectionObserver>("RecvConn");
 
   webrtc::PeerConnectionDependencies recv_pc_dependencies(recv_observer_.get());
   recv_connection_ =
@@ -192,7 +192,7 @@ void LoopCallSesstion::Connect() {
   recv_observer_->SetConnection(send_connection_);
 }
 
-void LoopCallSesstion::StartLoopCall() {
+void LoopCallSesstion::StartLoopCall(size_t capture_device_index) {
   {
     std::lock_guard<std::mutex> lk_(pc_mutex_);
     if (call_started_) {
@@ -206,7 +206,7 @@ void LoopCallSesstion::StartLoopCall() {
   audio_source_ = pcf_->CreateAudioSource(audio_options);
   local_audio_track_ = pcf_->CreateAudioTrack(kAudioLabel, audio_source_);
 
-  video_source_ = CaptureVideoTrackSource::Create(0);
+  video_source_ = CaptureVideoTrackSource::Create(capture_device_index);
 
   CreateConnections();
   Connect();
@@ -241,7 +241,17 @@ void LoopCallSesstion::StopLoopCall() {
   call_started_ = false;
 }
 
-ConnectionObserver::ConnectionObserver() {}
+rtc::scoped_refptr<webrtc::VideoTrackInterface>
+LoopCallSesstion::GetRemoteVideoTrack() {
+  if (recv_observer_) {
+    return recv_observer_->GetRemoteVideoTrack();
+  }
+  return nullptr;
+}
+
+ConnectionObserver::ConnectionObserver(const std::string &tag) : tag_(tag) {}
+
+ConnectionObserver::~ConnectionObserver() = default;
 
 void ConnectionObserver::OnSignalingChange(
     webrtc::PeerConnectionInterface::SignalingState new_state) {
@@ -286,6 +296,18 @@ void ConnectionObserver::OnIceCandidate(
   }
 }
 
+void ConnectionObserver::OnAddTrack(
+    rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+    const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>
+        &streams) {
+  auto *track = receiver->track().get();
+  if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
+    remote_video_track_ = static_cast<webrtc::VideoTrackInterface *>(track);
+  }
+  printf("[%s]: OnAddTrack %p %s\n", tag_.c_str(), track,
+         track->kind().c_str());
+}
+
 void ConnectionObserver::SetConnection(
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection) {
   peer_connection_ = peer_connection;
@@ -296,6 +318,11 @@ void ConnectionObserver::SetConnection(
       peer_connection_->AddIceCandidate(ice_candidate.get());
     }
   }
+}
+
+rtc::scoped_refptr<webrtc::VideoTrackInterface>
+ConnectionObserver::GetRemoteVideoTrack() {
+  return remote_video_track_;
 }
 
 CreateOfferObserver::CreateOfferObserver(const std::string &role)

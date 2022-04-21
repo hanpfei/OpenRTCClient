@@ -19,23 +19,32 @@ typedef struct _GtkTreePath GtkTreePath;
 typedef struct _GtkTreeViewColumn GtkTreeViewColumn;
 typedef struct _cairo cairo_t;
 
+class MainWndCallback {
+public:
+  virtual void InitializeLoopConnectCall() = 0;
+  virtual void GetCaptureDeviceList() = 0;
+  virtual void StartLoopConnectCall(size_t capture_device_index) = 0;
+  virtual void StopLoopConnectCall() = 0;
+  virtual void UIThreadCallback(int msg_id, void *data) = 0;
+
+protected:
+  virtual ~MainWndCallback() {}
+};
+
 // Implements the main UI of the peer connection client.
 // This is functionally equivalent to the MainWnd class in the Windows
 // implementation.
 class GtkMainWnd {
 public:
-  GtkMainWnd(const char *server, int port, bool autoconnect, bool autocall);
-  ~GtkMainWnd();
+  GtkMainWnd();
+  virtual ~GtkMainWnd();
 
-  //  virtual void RegisterObserver(MainWndCallback* callback);
+  virtual void RegisterObserver(MainWndCallback *callback);
   virtual bool IsWindow();
-  virtual void SwitchToConnectUI();
-  //  virtual void SwitchToPeerList(const Peers& peers);
+  virtual void SwitchToControlUI();
+  virtual void ShowCaptureDeviceList(const std::vector<std::string> &devices);
   virtual void SwitchToStreamingUI();
   virtual void MessageBox(const char *caption, const char *text, bool is_error);
-  //  virtual MainWindow::UI current_ui();
-  virtual void StartLocalRenderer(webrtc::VideoTrackInterface *local_video);
-  virtual void StopLocalRenderer();
   virtual void StartRemoteRenderer(webrtc::VideoTrackInterface *remote_video);
   virtual void StopRemoteRenderer();
 
@@ -95,15 +104,15 @@ protected:
   GtkWidget *window_;    // Our main window.
   GtkWidget *draw_area_; // The drawing surface for rendering video streams.
   GtkWidget *vbox_;      // Container for the Connect UI.
-  GtkWidget *server_edit_;
-  GtkWidget *port_edit_;
-  GtkWidget *peer_list_; // The list of peers.
-                         //  MainWndCallback* callback_;
-  std::string server_;
-  std::string port_;
-  bool autoconnect_;
-  bool autocall_;
-  std::unique_ptr<VideoRenderer> local_renderer_;
+  GtkWidget *capture_device_list_; // The list of peers.
+                                   //  MainWndCallback* callback_;
+
+  GtkWidget *init_button_;
+  GtkWidget *get_capture_device_button_;
+  GtkWidget *stop_button_;
+
+  MainWndCallback *callback_;
+
   std::unique_ptr<VideoRenderer> remote_renderer_;
   int width_;
   int height_;

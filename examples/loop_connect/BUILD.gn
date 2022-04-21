@@ -24,24 +24,16 @@ if (is_linux || is_win) {
       "//api/video_codecs:video_codecs_api",
       "//media:rtc_media_base",
       "//p2p:rtc_p2p",
-      #"//pc:video_track_source",
       "//rtc_base:checks",
-      #"//rtc_base:net_helpers",
       "//rtc_base:threading",
       "//rtc_base/third_party/sigslot",
       "//system_wrappers:field_trial",
       "//test:field_trial",
-      #"//test:platform_video_capturer",
-      #"//test:rtp_test_utils",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
     if (is_win) {
       sources += [
-        "peerconnection/client/flag_defs.h",
-        "peerconnection/client/main.cc",
-        "peerconnection/client/main_wnd.cc",
-        "peerconnection/client/main_wnd.h",
       ]
       configs += [ "//build/config/win:windowed" ]
       deps += [
@@ -49,7 +41,7 @@ if (is_linux || is_win) {
         "../rtc_base:win32",
       ]
     }
-    if (is_linux || is_chromeos) {
+    if (is_linux) {
       sources += [
         "src/linux/main_wnd.cc",
         "src/linux/main_wnd.h",

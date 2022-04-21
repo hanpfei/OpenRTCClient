@@ -16,6 +16,9 @@ public:
   static rtc::scoped_refptr<CaptureVideoTrackSource>
   Create(size_t capture_device_index, size_t width = 640, size_t height = 480,
          size_t fps = 30);
+
+  static bool GetCaptureDeviceList(std::vector<std::string> &devices);
+
   virtual ~CaptureVideoTrackSource();
 
   // inherit from webrtc::VideoTrackSourceInterface

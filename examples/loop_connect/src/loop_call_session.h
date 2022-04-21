@@ -8,10 +8,12 @@
 
 class ConnectionObserver : public webrtc::PeerConnectionObserver {
 public:
-  ConnectionObserver();
+  explicit ConnectionObserver(const std::string &tag);
+  virtual ~ConnectionObserver();
 
   void SetConnection(
       rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection);
+  rtc::scoped_refptr<webrtc::VideoTrackInterface> GetRemoteVideoTrack();
 
   void OnSignalingChange(
       webrtc::PeerConnectionInterface::SignalingState new_state) override;
@@ -23,10 +25,16 @@ public:
   void OnIceGatheringChange(
       webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
   void OnIceCandidate(const webrtc::IceCandidateInterface *candidate) override;
+  void
+  OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+             const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>
+                 &streams) override;
 
 private:
+  const std::string tag_;
   std::vector<std::shared_ptr<webrtc::IceCandidateInterface>> candidates_;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+  rtc::scoped_refptr<webrtc::VideoTrackInterface> remote_video_track_;
 };
 
 class LoopCallSesstion {
@@ -35,8 +43,9 @@ public:
   virtual ~LoopCallSesstion();
 
   bool LoopCallStarted();
-  void StartLoopCall();
+  void StartLoopCall(size_t capture_device_index);
   void StopLoopCall();
+  rtc::scoped_refptr<webrtc::VideoTrackInterface> GetRemoteVideoTrack();
 
 private:
   void CreatePeerConnectionFactory();

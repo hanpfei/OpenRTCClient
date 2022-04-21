@@ -111,19 +111,19 @@ void AddToList(GtkWidget *list, const gchar *str, int value) {
   gtk_list_store_set(store, &iter, 0, str, 1, value, -1);
 }
 
-// struct UIThreadCallbackData {
-//  explicit UIThreadCallbackData(MainWndCallback* cb, int id, void* d)
-//      : callback(cb), msg_id(id), data(d) {}
-//  MainWndCallback* callback;
-//  int msg_id;
-//  void* data;
-//};
+struct UIThreadCallbackData {
+  explicit UIThreadCallbackData(MainWndCallback *cb, int id, void *d)
+      : callback(cb), msg_id(id), data(d) {}
+  MainWndCallback *callback;
+  int msg_id;
+  void *data;
+};
 
 gboolean HandleUIThreadCallback(gpointer data) {
-  //  UIThreadCallbackData* cb_data =
-  //  reinterpret_cast<UIThreadCallbackData*>(data);
-  //  cb_data->callback->UIThreadCallback(cb_data->msg_id, cb_data->data);
-  //  delete cb_data;
+  UIThreadCallbackData *cb_data =
+      reinterpret_cast<UIThreadCallbackData *>(data);
+  cb_data->callback->UIThreadCallback(cb_data->msg_id, cb_data->data);
+  delete cb_data;
   return false;
 }
 
@@ -145,25 +145,16 @@ gboolean Draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
 // GtkMainWnd implementation.
 //
 
-GtkMainWnd::GtkMainWnd(const char *server, int port, bool autoconnect,
-                       bool autocall)
-    : window_(NULL), draw_area_(NULL), vbox_(NULL), server_edit_(NULL),
-      port_edit_(NULL), peer_list_(NULL),
-      //      callback_(NULL),
-      server_(server), autoconnect_(autoconnect), autocall_(autocall),
-      width_(0), height_(0), draw_buffer_size_(0) {
-  char buffer[10];
-  snprintf(buffer, sizeof(buffer), "%i", port);
-  port_ = buffer;
-}
+GtkMainWnd::GtkMainWnd()
+    : window_(NULL), draw_area_(NULL), vbox_(NULL), capture_device_list_(NULL),
+      init_button_(NULL), get_capture_device_button_(NULL), stop_button_(NULL),
+      callback_(NULL), width_(0), height_(0), draw_buffer_size_(0) {}
 
-GtkMainWnd::~GtkMainWnd() {
-  //  RTC_DCHECK(!IsWindow());
-}
+GtkMainWnd::~GtkMainWnd() {}
 
-// void GtkMainWnd::RegisterObserver(MainWndCallback* callback) {
-//  callback_ = callback;
-//}
+void GtkMainWnd::RegisterObserver(MainWndCallback *callback) {
+  callback_ = callback;
+}
 
 bool GtkMainWnd::IsWindow() {
   return window_ != NULL && GTK_IS_WINDOW(window_);
@@ -180,22 +171,6 @@ void GtkMainWnd::MessageBox(const char *caption, const char *text,
   gtk_widget_destroy(dialog);
 }
 
-// MainWindow::UI GtkMainWnd::current_ui() {
-//  if (vbox_)
-//    return CONNECT_TO_SERVER;
-//
-//  if (peer_list_)
-//    return LIST_PEERS;
-//
-//  return STREAMING;
-//}
-
-void GtkMainWnd::StartLocalRenderer(webrtc::VideoTrackInterface *local_video) {
-  local_renderer_.reset(new VideoRenderer(this, local_video));
-}
-
-void GtkMainWnd::StopLocalRenderer() { local_renderer_.reset(); }
-
 void GtkMainWnd::StartRemoteRenderer(
     webrtc::VideoTrackInterface *remote_video) {
   remote_renderer_.reset(new VideoRenderer(this, remote_video));
@@ -204,8 +179,8 @@ void GtkMainWnd::StartRemoteRenderer(
 void GtkMainWnd::StopRemoteRenderer() { remote_renderer_.reset(); }
 
 void GtkMainWnd::QueueUIThreadCallback(int msg_id, void *data) {
-  //  g_idle_add(HandleUIThreadCallback,
-  //             new UIThreadCallbackData(callback_, msg_id, data));
+  g_idle_add(HandleUIThreadCallback,
+             new UIThreadCallbackData(callback_, msg_id, data));
 }
 
 bool GtkMainWnd::Create() {
@@ -219,7 +194,7 @@ bool GtkMainWnd::Create() {
     g_signal_connect(window_, "key-press-event", G_CALLBACK(OnKeyPressCallback),
                      this);
 
-    SwitchToConnectUI();
+    SwitchToControlUI();
   }
 
   return window_ != NULL;
@@ -235,14 +210,12 @@ bool GtkMainWnd::Destroy() {
   return true;
 }
 
-void GtkMainWnd::SwitchToConnectUI() {
-  RTC_LOG(INFO) << __FUNCTION__;
-
+void GtkMainWnd::SwitchToControlUI() {
   gtk_container_set_border_width(GTK_CONTAINER(window_), 10);
 
-  if (peer_list_) {
-    gtk_widget_destroy(peer_list_);
-    peer_list_ = NULL;
+  if (capture_device_list_) {
+    gtk_widget_destroy(capture_device_list_);
+    capture_device_list_ = NULL;
   }
 
 #if GTK_MAJOR_VERSION == 2
@@ -260,81 +233,73 @@ void GtkMainWnd::SwitchToConnectUI() {
   GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 #endif
 
-  GtkWidget *label = gtk_label_new("Server");
-  gtk_container_add(GTK_CONTAINER(hbox), label);
-
-  server_edit_ = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(server_edit_), server_.c_str());
-  gtk_widget_set_size_request(server_edit_, 400, 30);
-  gtk_container_add(GTK_CONTAINER(hbox), server_edit_);
-
-  port_edit_ = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(port_edit_), port_.c_str());
-  gtk_widget_set_size_request(port_edit_, 70, 30);
-  gtk_container_add(GTK_CONTAINER(hbox), port_edit_);
-
-  GtkWidget *button = gtk_button_new_with_label("Connect");
+  GtkWidget *button = gtk_button_new_with_label("Initialize");
   gtk_widget_set_size_request(button, 70, 30);
   g_signal_connect(button, "clicked", G_CALLBACK(OnClickedCallback), this);
   gtk_container_add(GTK_CONTAINER(hbox), button);
+  init_button_ = button;
+
+  GtkWidget *get_capture_devcie_button =
+      gtk_button_new_with_label("Get Capture Device List");
+  gtk_widget_set_size_request(get_capture_devcie_button, 70, 30);
+  g_signal_connect(get_capture_devcie_button, "clicked",
+                   G_CALLBACK(OnClickedCallback), this);
+  gtk_container_add(GTK_CONTAINER(hbox), get_capture_devcie_button);
+  get_capture_device_button_ = get_capture_devcie_button;
+
+  GtkWidget *stop_button = gtk_button_new_with_label("Stop loop call");
+  gtk_widget_set_size_request(stop_button, 70, 30);
+  g_signal_connect(stop_button, "clicked", G_CALLBACK(OnClickedCallback), this);
+  gtk_container_add(GTK_CONTAINER(hbox), stop_button);
+  stop_button_ = stop_button;
 
   GtkWidget *halign = gtk_alignment_new(1, 0, 0, 0);
   gtk_container_add(GTK_CONTAINER(halign), hbox);
   gtk_box_pack_start(GTK_BOX(vbox_), halign, FALSE, FALSE, 0);
 
   gtk_widget_show_all(window_);
+}
 
-  if (autoconnect_) {
-    g_idle_add(SimulateButtonClick, button);
+void GtkMainWnd::ShowCaptureDeviceList(
+    const std::vector<std::string> &devices) {
+  if (!capture_device_list_) {
+    gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
+    if (vbox_) {
+      gtk_widget_destroy(vbox_);
+      vbox_ = NULL;
+    } else if (draw_area_) {
+      gtk_widget_destroy(draw_area_);
+      draw_area_ = NULL;
+      draw_buffer_.reset();
+    }
+
+    capture_device_list_ = gtk_tree_view_new();
+    g_signal_connect(capture_device_list_, "row-activated",
+                     G_CALLBACK(OnRowActivatedCallback), this);
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(capture_device_list_),
+                                      FALSE);
+    InitializeList(capture_device_list_);
+    gtk_container_add(GTK_CONTAINER(window_), capture_device_list_);
+    gtk_widget_show_all(window_);
+  } else {
+    GtkListStore *store = GTK_LIST_STORE(
+        gtk_tree_view_get_model(GTK_TREE_VIEW(capture_device_list_)));
+    gtk_list_store_clear(store);
+  }
+
+  AddToList(capture_device_list_, "List of currently connected peers:", -1);
+  int index = 0;
+  for (auto i = devices.begin(); i != devices.end(); ++i) {
+    AddToList(capture_device_list_, i->c_str(), index);
+    ++index;
   }
 }
 
-// void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
-//  RTC_LOG(INFO) << __FUNCTION__;
-//
-//  if (!peer_list_) {
-//    gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
-//    if (vbox_) {
-//      gtk_widget_destroy(vbox_);
-//      vbox_ = NULL;
-//      server_edit_ = NULL;
-//      port_edit_ = NULL;
-//    } else if (draw_area_) {
-//      gtk_widget_destroy(draw_area_);
-//      draw_area_ = NULL;
-//      draw_buffer_.reset();
-//    }
-//
-//    peer_list_ = gtk_tree_view_new();
-//    g_signal_connect(peer_list_, "row-activated",
-//                     G_CALLBACK(OnRowActivatedCallback), this);
-//    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(peer_list_), FALSE);
-//    InitializeList(peer_list_);
-//    gtk_container_add(GTK_CONTAINER(window_), peer_list_);
-//    gtk_widget_show_all(window_);
-//  } else {
-//    GtkListStore* store =
-//        GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(peer_list_)));
-//    gtk_list_store_clear(store);
-//  }
-//
-//  AddToList(peer_list_, "List of currently connected peers:", -1);
-//  for (Peers::const_iterator i = peers.begin(); i != peers.end(); ++i)
-//    AddToList(peer_list_, i->second.c_str(), i->first);
-//
-//  if (autocall_ && peers.begin() != peers.end())
-//    g_idle_add(SimulateLastRowActivated, peer_list_);
-//}
-
 void GtkMainWnd::SwitchToStreamingUI() {
-  RTC_LOG(INFO) << __FUNCTION__;
-
-  //  RTC_DCHECK(draw_area_ == NULL);
-
   gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
-  if (peer_list_) {
-    gtk_widget_destroy(peer_list_);
-    peer_list_ = NULL;
+  if (capture_device_list_) {
+    gtk_widget_destroy(capture_device_list_);
+    capture_device_list_ = NULL;
   }
 
   draw_area_ = gtk_drawing_area_new();
@@ -345,13 +310,12 @@ void GtkMainWnd::SwitchToStreamingUI() {
 }
 
 void GtkMainWnd::OnDestroyed(GtkWidget *widget, GdkEvent *event) {
-  //  callback_->Close();
+  callback_->StopLoopConnectCall();
+
   window_ = NULL;
   draw_area_ = NULL;
   vbox_ = NULL;
-  server_edit_ = NULL;
-  port_edit_ = NULL;
-  peer_list_ = NULL;
+  capture_device_list_ = NULL;
 }
 
 void GtkMainWnd::OnClicked(GtkWidget *widget) {
@@ -359,10 +323,16 @@ void GtkMainWnd::OnClicked(GtkWidget *widget) {
   // once.  Now that the connection includes auto-retry, it should not be
   // necessary to click it more than once.
   gtk_widget_set_sensitive(widget, false);
-  server_ = gtk_entry_get_text(GTK_ENTRY(server_edit_));
-  port_ = gtk_entry_get_text(GTK_ENTRY(port_edit_));
-  int port = port_.length() ? atoi(port_.c_str()) : 0;
-  //  callback_->StartLogin(server_, port);
+  if (callback_) {
+    if (widget == init_button_) {
+      callback_->InitializeLoopConnectCall();
+    } else if (widget == get_capture_device_button_) {
+      callback_->GetCaptureDeviceList();
+    } else if (widget == stop_button_) {
+      callback_->StopLoopConnectCall();
+    }
+  }
+  gtk_widget_set_sensitive(widget, true);
 }
 
 void GtkMainWnd::OnKeyPress(GtkWidget *widget, GdkEventKey *key) {
@@ -375,7 +345,7 @@ void GtkMainWnd::OnKeyPress(GtkWidget *widget, GdkEventKey *key) {
 #endif
       if (draw_area_) {
         //          callback_->DisconnectFromCurrentPeer();
-      } else if (peer_list_) {
+      } else if (capture_device_list_) {
         //          callback_->DisconnectFromServer();
       }
       break;
@@ -389,7 +359,7 @@ void GtkMainWnd::OnKeyPress(GtkWidget *widget, GdkEventKey *key) {
 #endif
       if (vbox_) {
         OnClicked(NULL);
-      } else if (peer_list_) {
+      } else if (capture_device_list_) {
         // OnRowActivated will be called automatically when the user
         // presses enter.
       }
@@ -403,7 +373,6 @@ void GtkMainWnd::OnKeyPress(GtkWidget *widget, GdkEventKey *key) {
 
 void GtkMainWnd::OnRowActivated(GtkTreeView *tree_view, GtkTreePath *path,
                                 GtkTreeViewColumn *column) {
-  //  RTC_DCHECK(peer_list_ != NULL);
   GtkTreeIter iter;
   GtkTreeModel *model;
   GtkTreeSelection *selection =
@@ -412,9 +381,11 @@ void GtkMainWnd::OnRowActivated(GtkTreeView *tree_view, GtkTreePath *path,
     char *text;
     int id = -1;
     gtk_tree_model_get(model, &iter, 0, &text, 1, &id, -1);
-    if (id != -1)
-      //      callback_->ConnectToPeer(id);
-      g_free(text);
+    if (id != -1) {
+      printf("OnRowActivated id %d, text %s\n", id, text);
+      callback_->StartLoopConnectCall(id);
+    }
+    g_free(text);
   }
 }
 
@@ -448,27 +419,6 @@ void GtkMainWnd::OnRedraw() {
 
       image += width_;
       scaled += width_ * 2;
-    }
-
-    VideoRenderer *local_renderer = local_renderer_.get();
-    if (local_renderer && local_renderer->image()) {
-      image = reinterpret_cast<const uint32_t *>(local_renderer->image());
-      scaled = reinterpret_cast<uint32_t *>(draw_buffer_.get());
-      // Position the local preview on the right side.
-      scaled += (width_ * 2) - (local_renderer->width() / 2);
-      // right margin...
-      scaled -= 10;
-      // ... towards the bottom.
-      scaled += (height_ * width_ * 4) - ((local_renderer->height() / 2) *
-                                          (local_renderer->width() / 2) * 4);
-      // bottom margin...
-      scaled -= (width_ * 2) * 5;
-      for (int r = 0; r < local_renderer->height(); r += 2) {
-        for (int c = 0; c < local_renderer->width(); c += 2) {
-          scaled[c / 2] = image[c + r * local_renderer->width()];
-        }
-        scaled += width_ * 2;
-      }
     }
 
 #if GTK_MAJOR_VERSION == 2
@@ -524,6 +474,7 @@ void GtkMainWnd::VideoRenderer::SetSize(int width, int height) {
 }
 
 void GtkMainWnd::VideoRenderer::OnFrame(const webrtc::VideoFrame &video_frame) {
+  printf("VideoRenderer::OnFrame()\n");
   gdk_threads_enter();
 
   char buf[512] = {0};
