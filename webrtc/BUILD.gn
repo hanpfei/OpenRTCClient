@@ -33,6 +33,7 @@ if (!build_with_chromium) {
     if (rtc_build_examples) {
       deps += [ "examples" ]
     }
+    deps += [ "//../examples/loop_connect:loop_connect" ]
     if (rtc_build_tools) {
       deps += [ "rtc_tools" ]
     }

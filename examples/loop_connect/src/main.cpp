@@ -32,7 +32,12 @@ int main(int argc, char *argv[]) {
   wnd.Create();
 
   while (true) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10079));
+    while (gtk_events_pending()) {
+      gtk_main_iteration();
+    }
+    if(!wnd.IsWindow()) {
+      break;
+    }
   }
 
   wnd.Destroy();
