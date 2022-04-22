@@ -1,14 +1,27 @@
 import("//webrtc.gni")
 
+group("examples") {
+  # This target shall build all targets in examples.
+  testonly = true
+  deps = []
+
+  if (is_linux || is_win) {
+    deps += [
+      ":loop_connect",
+    ]
+  }
+}
+
 if (is_linux || is_win) {
   rtc_executable("loop_connect") {
+    visibility = [ "//*", ":*" ]
     testonly = true
     sources = [
-      "src/capture_video_track_source.cpp",
-      "src/capture_video_track_source.h",
-      "src/loop_call_session.cpp",
-      "src/loop_call_session.h",
-      "src/main.cpp",
+      "loop_connect/src/capture_video_track_source.cpp",
+      "loop_connect/src/capture_video_track_source.h",
+      "loop_connect/src/loop_call_session.cpp",
+      "loop_connect/src/loop_call_session.h",
+      "loop_connect/src/main.cpp",
     ]
 
     deps = [
@@ -43,8 +56,8 @@ if (is_linux || is_win) {
     }
     if (is_linux) {
       sources += [
-        "src/linux/main_wnd.cc",
-        "src/linux/main_wnd.h",
+        "loop_connect/src/linux/main_wnd.cc",
+        "loop_connect/src/linux/main_wnd.h",
       ]
       cflags = [ "-Wno-deprecated-declarations" ]
       libs = [
@@ -73,7 +86,6 @@ if (is_linux || is_win) {
       "//pc:peerconnection",
       "//rtc_base",
       "//rtc_base:rtc_base_approved",
-      #"//rtc_base:rtc_json",
       "//test:video_test_common",
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/flags:parse",

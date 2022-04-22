@@ -132,7 +132,7 @@ void LoopCallSesstion::CreateConnections() {
 
   if (video_source_) {
     rtc::scoped_refptr<webrtc::VideoTrackInterface> local_video_track =
-        pcf_->CreateVideoTrack("video", video_source_);
+        pcf_->CreateVideoTrack(kVideoLabel, video_source_);
     send_connection_->AddTransceiver(local_video_track);
     fprintf(stdout, "Local video sink set up: %p\n", local_video_track.get());
   }
