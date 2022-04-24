@@ -28,7 +28,6 @@
     "ios_enable_code_signing = false",
     "use_custom_libcxx = false",
     "use_goma = false",
-    "use_xcode_clang = true",
     "enable_libaom = false",
     "enable_libaom_decoder = false"
   ],

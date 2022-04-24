@@ -115,6 +115,10 @@ def prepare_gn_args(config):
   prepare_predefined_gn_args(config)
   prepare_custom_gn_args(config)
 
+  if "rtc_use_h264" not in config.gn_args_config or config.gn_args_config["rtc_use_h264"] == "false":
+    if "ffmpeg_branding" in config.gn_args_config:
+      del config.gn_args_config["ffmpeg_branding"]
+
   # write to args.gn
   file_name = os.path.join(os.getcwd(), config.build_dir, "args.gn")
   if os.path.exists(file_name):

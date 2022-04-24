@@ -169,12 +169,13 @@ class LicenseBuilder(object):
 
     @staticmethod
     def _RunGN(buildfile_dir, target):
+        gn_bin_path = os.path.abspath(os.path.join(SRC_DIR, os.pardir, 'build_system', 'tools', 'bin', 'mac', 'gn'))
         cmd = [
-            sys.executable,
-            os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'gn.py'),
+            gn_bin_path,
             'desc',
             '--all',
             '--format=json',
+            '--root={}'.format(SRC_DIR),
             os.path.abspath(buildfile_dir),
             target,
         ]

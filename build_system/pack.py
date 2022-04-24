@@ -20,7 +20,7 @@ from generate_licenses import LicenseBuilder
 SDK_FRAMEWORK_NAME = 'WebRTC.framework'
 
 target_archs = {
-    "ios" : ['arm64', 'arm', 'x64', 'x86'],
+    "ios" : ['arm64', 'x64'],
     "mac" : ['arm64', 'x64'],
     "android" : ['arm64', 'arm', 'x86', 'x64'],
     "linux" : ['arm64', 'arm', 'x86', 'x64']
