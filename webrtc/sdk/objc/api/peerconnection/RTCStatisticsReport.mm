@@ -171,23 +171,23 @@ NSObject *ValueFromStatsMember(const RTCStatsMemberInterface *member) {
 
 @end
 
-// @implementation RTC_OBJC_TYPE (RTCStatisticsReport) (Private)
+@implementation RTC_OBJC_TYPE (RTCStatisticsReport) (Private)
 
-// - (instancetype)initWithReport : (const webrtc::RTCStatsReport &)report {
-//   if (self = [super init]) {
-//     _timestamp_us = report.timestamp_us();
+- (instancetype)initWithReport : (const webrtc::RTCStatsReport &)report {
+  if (self = [super init]) {
+    _timestamp_us = report.timestamp_us();
 
-//     NSMutableDictionary *statisticsById =
-//         [NSMutableDictionary dictionaryWithCapacity:report.size()];
-//     for (const auto &stat : report) {
-//       RTC_OBJC_TYPE(RTCStatistics) *statistics =
-//           [[RTC_OBJC_TYPE(RTCStatistics) alloc] initWithStatistics:stat];
-//       statisticsById[statistics.id] = statistics;
-//     }
-//     _statistics = [statisticsById copy];
-//   }
+    NSMutableDictionary *statisticsById =
+        [NSMutableDictionary dictionaryWithCapacity:report.size()];
+    for (const auto &stat : report) {
+      RTC_OBJC_TYPE(RTCStatistics) *statistics =
+          [[RTC_OBJC_TYPE(RTCStatistics) alloc] initWithStatistics:stat];
+      statisticsById[statistics.id] = statistics;
+    }
+    _statistics = [statisticsById copy];
+  }
 
-//   return self;
-// }
+  return self;
+}
 
-// @end
+@end

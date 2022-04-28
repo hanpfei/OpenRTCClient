@@ -131,70 +131,14 @@ def merge_dSYM_slices(config, output_dir, build_dirs, gn_target_name):
     modify_the_version_number(output_dir)
 
 
-extra_ios_static_libs = [
-    'libbase_native_additions_objc.a',
-    'libcallback_logger_objc.a',
-    'libdefault_codec_factory_objc.a',
-    'libfile_logger_objc.a',
-    'libmedia_constraints.a',
-    'libmediaconstraints_objc.a',
-    'libmediasource_objc.a',
-    'libmetal_objc.a',
-    'libnative_api_audio_device_module.a',
-    'libnative_api.a',
-    'libnative_network_monitor.a',
-    'libnative_video.a',
-    'libnetwork_monitor_objc.a',
-    'libpeerconnectionfactory_base_objc.a',
-    'libui_objc.a',
-    'libvideo_objc.a',
-    'libvideo_toolbox_cc.a',
-    'libvideocapture_objc.a',
-    'libvideocodec_objc.a',
-    'libvideoframebuffer_objc.a',
-    'libvideorendereradapter_objc.a',
-    'libvideosource_objc.a',
-    'libvideotoolbox_objc.a',
-    'libvp8.a',
-    'libvp9.a',
-    'libvpx_codec_constants.a',
-    'libwrapped_native_codec_objc.a'
-]
-
-
 def merge_static_library(output_dir, build_dirs, extra_libs):
     print('Merge static libs.')
-    cmd = [
-        'xcodebuild', '-find-executable', 'libtool'
-    ]
-    libtool_path = subprocess.check_output(cmd).strip().decode('utf-8')
-    base_cmd =[libtool_path, '-static', '-D', '-no_warning_for_no_symbols', '-o']
 
     output_files = []
-    output_file_name = "libwebrtc_.a"
-    for (target_arch, build_dir) in build_dirs.items():
-        output_file_dir = os.path.join(output_dir, target_arch)
-        if not os.path.exists(output_file_dir):
-            os.makedirs(output_file_dir)
-        
-        output_file_path = os.path.join(output_file_dir, output_file_name)
-        try:
-            os.remove(output_file_path)
-        except OSError:
-            pass
-
+    for (_, build_dir) in build_dirs.items():
         static_webrtc_lib_path = os.path.join(build_dir, "obj", "libwebrtc.a")
-
-        libs = [os.path.join(build_dir, "obj", "sdk", libname) for libname in extra_libs if os.path.exists(os.path.join(build_dir, "obj", "sdk", libname))]
-
-        libs += [os.path.join(build_dir, "obj", "test", libname) for libname in extra_libs if os.path.exists(os.path.join(build_dir, "obj", "test", libname))]
-
-
-        cmd = base_cmd + [output_file_path] + [static_webrtc_lib_path] + libs
-        cmd_str = " ".join(cmd)
-        run_cmd(cmd_str)
-        output_files.append(output_file_path)
-        print("")
+        output_files.append(static_webrtc_lib_path)
+    print("")
     
     return output_files
 
@@ -240,7 +184,7 @@ def pack_ios(config):
         build_dirs[arch] = build_dir
         print("")
 
-    output_files = merge_static_library(output_dir, build_dirs, extra_ios_static_libs)
+    output_files = merge_static_library(output_dir, build_dirs, [])
 
     create_fat_static_library(output_dir, output_files)
 
