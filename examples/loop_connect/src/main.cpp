@@ -77,6 +77,7 @@ void Conductor::StartLoopConnectCall(size_t capture_device_index) {
 
 void Conductor::StopLoopConnectCall() {
   if (loop_call_session_) {
+    main_window_->StopRemoteRenderer();
     loop_call_session_->StopLoopCall();
   } else {
     main_window_->MessageBox("Message", "Loop call has not been initialized",

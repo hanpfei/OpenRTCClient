@@ -66,7 +66,25 @@ LoopCallSesstion::LoopCallSesstion() : call_started_(false) {
   CreatePeerConnectionFactory();
 }
 
-LoopCallSesstion::~LoopCallSesstion() = default;
+LoopCallSesstion::~LoopCallSesstion() {
+  send_observer_ = nullptr;
+  recv_observer_ = nullptr;
+
+  send_connection_ = nullptr;
+  recv_connection_ = nullptr;
+
+  local_audio_track_ = nullptr;
+  audio_source_ = nullptr;
+
+  video_source_ = nullptr;
+  remote_sink_ = nullptr;
+
+  pcf_ = nullptr;
+
+  signaling_thread_ = nullptr;
+  worker_thread_ = nullptr;
+  network_thread_ = nullptr;
+}
 
 void LoopCallSesstion::CreatePeerConnectionFactory() {
   network_thread_ = rtc::Thread::CreateWithSocketServer();
