@@ -73,6 +73,7 @@ LibaomAv1Decoder::~LibaomAv1Decoder() {
 }
 
 bool LibaomAv1Decoder::Configure(const Settings& settings) {
+  RTC_LOG(LS_INFO) << "Configure(" << this << ")";
   aom_codec_dec_cfg_t config = {};
   config.threads = static_cast<unsigned int>(settings.number_of_cores());
   config.allow_lowbitdepth = kConfigLowBitDepth;

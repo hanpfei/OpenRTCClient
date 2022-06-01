@@ -395,6 +395,13 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
       port_allocator_config.flags = flags;
     }
 
+    int video_codec_type() const {
+      return media_config.video.codec_type;
+    }
+    void set_video_codec_type(int video_codec_type) {
+      media_config.video.codec_type = video_codec_type;
+    }
+
     static const int kUndefined = -1;
     // Default maximum number of packets in the audio jitter buffer.
     static const int kAudioJitterBufferMaxPackets = 200;

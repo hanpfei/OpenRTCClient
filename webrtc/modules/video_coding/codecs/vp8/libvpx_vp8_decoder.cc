@@ -26,6 +26,7 @@
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/field_trial.h"
@@ -139,6 +140,7 @@ LibvpxVp8Decoder::~LibvpxVp8Decoder() {
 }
 
 bool LibvpxVp8Decoder::Configure(const Settings& settings) {
+  RTC_LOG(LS_INFO) << "Configure(" << this << ")";
   if (Release() < 0) {
     return false;
   }

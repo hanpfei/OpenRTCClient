@@ -436,6 +436,7 @@ if (!build_with_chromium) {
     visibility = [
       "//:default",
       "//:webrtc_lib_link_test",
+      "*:*",
     ]
 
     sources = []

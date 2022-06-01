@@ -173,6 +173,7 @@ H264DecoderImpl::~H264DecoderImpl() {
 }
 
 bool H264DecoderImpl::Configure(const Settings& settings) {
+  RTC_LOG(LS_INFO) << "Configure(" << this << ")";
   ReportInit();
   if (settings.codec_type() != kVideoCodecH264) {
     ReportError();

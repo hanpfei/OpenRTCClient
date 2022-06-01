@@ -8,11 +8,34 @@ group("examples") {
   if (is_linux || is_win) {
     deps += [
       ":loop_connect",
+      ":smoke_test",
     ]
   }
 }
 
 if (is_linux || is_win) {
+  rtc_executable("smoke_test") {
+    visibility = [ "//*", ":*" ]
+    testonly = true
+
+    sources = [
+      "smoke_test/src/video_codec_test.cpp",
+    ]
+
+    sources += [
+      "smoke_test/src/main.cpp",
+    ]
+
+    public_deps = [
+      "//third_party/googletest:gtest",
+    ]
+
+    deps = [
+      "//:webrtc",
+      "//test:video_test_common"
+    ]
+  }
+
   rtc_executable("loop_connect") {
     visibility = [ "//*", ":*" ]
     testonly = true

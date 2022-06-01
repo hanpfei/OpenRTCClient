@@ -814,8 +814,30 @@ bool WebRtcVideoChannel::GetChangedSendParameters(
   if (negotiated_codecs_ != negotiated_codecs) {
     if (negotiated_codecs.empty()) {
       changed_params->send_codec = absl::nullopt;
-    } else if (send_codec_ != negotiated_codecs.front()) {
-      changed_params->send_codec = negotiated_codecs.front();
+    } else {
+      // Apply video encoder codec type config
+      webrtc::VideoCodecType codec_type =
+          static_cast<webrtc::VideoCodecType>(video_config_.codec_type);
+      auto codec_name = CodecTypeToPayloadString(codec_type);
+      auto iter = negotiated_codecs.begin();
+      if (video_config_.codec_type != 0) {
+        for (; iter != negotiated_codecs.end(); ++iter) {
+          if (absl::EqualsIgnoreCase(codec_name, iter->codec.name)) {
+            break;
+          }
+        }
+      } else {
+        iter = negotiated_codecs.end();
+      }
+      if (iter != negotiated_codecs.end()) {
+        if (send_codec_ != *iter) {
+          changed_params->send_codec = *iter;
+        }
+      } else {
+        if (send_codec_ != negotiated_codecs.front()) {
+          changed_params->send_codec = negotiated_codecs.front();
+        }
+      }
     }
     changed_params->negotiated_codecs = std::move(negotiated_codecs);
   }

@@ -121,6 +121,7 @@ LibvpxVp9Decoder::~LibvpxVp9Decoder() {
 }
 
 bool LibvpxVp9Decoder::Configure(const Settings& settings) {
+  RTC_LOG(LS_INFO) << "Configure(" << this << ")";
   if (Release() < 0) {
     return false;
   }

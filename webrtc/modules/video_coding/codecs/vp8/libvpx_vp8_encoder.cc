@@ -438,6 +438,8 @@ void LibvpxVp8Encoder::SetFecControllerOverride(
 // TODO(eladalon): s/inst/codec_settings/g.
 int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
                                  const VideoEncoder::Settings& settings) {
+  RTC_LOG(LS_INFO) << "InitEncode(" << this << ", "
+                   << inst->width << "x" << inst->height << ")";
   if (inst == NULL) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }

@@ -154,6 +154,8 @@ LibaomAv1Encoder::~LibaomAv1Encoder() {
 
 int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
                                  const Settings& settings) {
+  RTC_LOG(LS_INFO) << "InitEncode(" << this << ", " << codec_settings->width
+                   << "x" << codec_settings->height << ")";
   if (codec_settings == nullptr) {
     RTC_LOG(LS_WARNING) << "No codec settings provided to "
                            "LibaomAv1Encoder.";

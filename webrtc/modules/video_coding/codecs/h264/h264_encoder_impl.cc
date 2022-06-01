@@ -166,6 +166,8 @@ H264EncoderImpl::~H264EncoderImpl() {
 
 int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
                                     const VideoEncoder::Settings& settings) {
+  RTC_LOG(LS_INFO) << "InitEncode(" << this << ", "
+                   << inst->width << "x" << inst->height << ")";
   ReportInit();
   if (!inst || inst->codecType != kVideoCodecH264) {
     ReportError();

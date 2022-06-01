@@ -56,6 +56,9 @@ struct MediaConfig {
 
     // Time interval between RTCP report for video
     int rtcp_report_interval_ms = 1000;
+
+    // Codec type for video
+    int codec_type = 0;
   } video;
 
   // Audio-specific config.

@@ -494,6 +494,8 @@ void LibvpxVp9Encoder::SetRates(const RateControlParameters& parameters) {
 // TODO(eladalon): s/inst/codec_settings/g.
 int LibvpxVp9Encoder::InitEncode(const VideoCodec* inst,
                                  const Settings& settings) {
+  RTC_LOG(LS_INFO) << "InitDecode(" << this << ", "
+                   << inst->width << "x" << inst->height << ")";
   if (inst == nullptr) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
