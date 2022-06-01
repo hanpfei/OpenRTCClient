@@ -8,14 +8,7 @@
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_encoder.h"
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wundef"
-#endif
-#include "gtest/gtest.h"
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
+#include "media_test_utils/test_base.h"
 #include "media/base/media_constants.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/include/video_error_codes.h"

@@ -19,6 +19,21 @@ if (is_linux || is_win) {
     testonly = true
 
     sources = [
+      "smoke_test/src/media_test_utils/byte_stream_utils.cpp",
+      "smoke_test/src/media_test_utils/byte_stream_utils.h",
+      "smoke_test/src/media_test_utils/conn_utils.cpp",
+      "smoke_test/src/media_test_utils/conn_utils.h",
+      "smoke_test/src/media_test_utils/test_video_capturer.cc",
+      "smoke_test/src/media_test_utils/test_video_capturer.h",
+      "smoke_test/src/media_test_utils/vcm_capturer.cc",
+      "smoke_test/src/media_test_utils/vcm_capturer.h",
+      "smoke_test/src/media_test_utils/video_frame_file_writer_bmp.cpp",
+      "smoke_test/src/media_test_utils/video_frame_file_writer_bmp.h",
+    ]
+
+    sources += [
+      "smoke_test/src/camera_capture_test.cpp",
+      "smoke_test/src/peer_connection_test.cpp",
       "smoke_test/src/video_codec_test.cpp",
     ]
 
