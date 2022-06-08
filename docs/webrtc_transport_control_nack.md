@@ -747,7 +747,7 @@ void RTPSender::OnReceivedNack(
 
 `webrtc::RTPSender` 在 `webrtc::RtpPacketHistory` 中查找要重传的包，如果找到，就通过 PacedSender 发送出去。这整个过程大概就像下面这样：
 
-![1654572386229.jpg](https://upload-images.jianshu.io/upload_images/1315506-599b45fe7398d8bb.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![1654572386229.jpg](images/1315506-599b45fe7398d8bb.jpg)
 
 图中蓝色箭头和红色方框中的这些逻辑是 NACK 数据包处理过程中，不同于一般采集、编码及发送流程的地方。
 
