@@ -137,6 +137,7 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   // redundancy for opus audio.
   const bool audio_red_for_opus_enabled_;
   const bool minimized_remsampling_on_mobile_trial_enabled_;
+  const bool audio_nack_enabled_;
 };
 
 // WebRtcVoiceMediaChannel is an implementation of VoiceMediaChannel that uses

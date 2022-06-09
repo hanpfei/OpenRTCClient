@@ -314,7 +314,8 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
       audio_red_for_opus_enabled_(
           !IsDisabled(trials, "WebRTC-Audio-Red-For-Opus")),
       minimized_remsampling_on_mobile_trial_enabled_(
-          IsEnabled(trials, "WebRTC-Audio-MinimizeResamplingOnMobile")) {
+          IsEnabled(trials, "WebRTC-Audio-MinimizeResamplingOnMobile")),
+      audio_nack_enabled_(IsEnabled(trials, "WebRTC-Audio-NACK")){
   // This may be called from any thread, so detach thread checkers.
   worker_thread_checker_.Detach();
   signal_thread_checker_.Detach();
@@ -750,6 +751,10 @@ std::vector<AudioCodec> WebRtcVoiceEngine::CollectCodecs(
       if (spec.info.supports_network_adaption) {
         codec.AddFeedbackParam(
             FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
+        if (audio_nack_enabled_) {
+          codec.AddFeedbackParam(
+              FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
+        }
       }
 
       if (spec.info.allow_comfort_noise) {
