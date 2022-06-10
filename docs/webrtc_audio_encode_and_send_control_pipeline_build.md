@@ -101,7 +101,7 @@ WebRTC 的音频数据处理发送的概念抽象层面的完整流程如下：
 #4  webrtc::internal::Call::CreateAudioSendStream(webrtc::AudioSendStream::Config const&) () at webrtc/call/call.cc:897
 ```
 
-`webrtc::AudioSendStream` 通过 `webrtc::Call` 创建，传入了 `webrtc::AudioSendStream::Config` 包含与编解码、RTP、加密相关，及 `webrtc::Transport` 等各种配置。
+`webrtc::AudioSendStream` 通过 `webrtc::Call` 创建，传入 `webrtc::AudioSendStream::Config`，其中包含与编解码、RTP、加密相关，及 `webrtc::Transport` 等各种配置。
 
 `webrtc::voe::(anonymous namespace)::ChannelSend` 对象的构造函数如下：
 ```
