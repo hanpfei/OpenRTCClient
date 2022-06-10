@@ -82,7 +82,7 @@ WebRTC 的音频数据接收处理的概念抽象层面的完整流程大体如�
 
 `webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream` 是整个过程的中心，其实现位于 `webrtc/audio/audio_receive_stream.h` / `webrtc/audio/audio_receive_stream.cc`，相关的类层次结构如下图：
 
-![webrtc::AudioReceiveStream](https://upload-images.jianshu.io/upload_images/1315506-0ada9d4b74bc904f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![webrtc::AudioReceiveStream](images/1315506-0ada9d4b74bc904f.jpg)
 
 在 RTC 中，为了实现交互和低延迟，音频数据接收处理不能只做包的重排序和解码，它还要充分考虑网络对抗，如 PLC 及发送 RTCP 反馈等，这也是一个相当复杂的过程。WebRTC 的设计大量采用了控制流与数据流分离的思想，这在 `webrtc::AudioReceiveStream` 的设计与实现中也有体现。分析 `webrtc::AudioReceiveStream` 的设计与实现时，也可以从配置及控制，和数据流两个角度来看。
 
@@ -96,7 +96,7 @@ WebRTC 的音频数据接收处理的概念抽象层面的完整流程大体如�
 
 `webrtc::AudioReceiveStream` 的实现中，最主要的数据处理流程 —— 音频数据接收、解码及播放过程，及相关模块如下图：
 
-![WebRTC Audio Receive, Decode and Play](https://upload-images.jianshu.io/upload_images/1315506-c90f7d7399903442.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![WebRTC Audio Receive, Decode and Play](images/1315506-c90f7d7399903442.jpg)
 
 这个图中的箭头表示数据流动的方向，数据在各个模块中处理的先后顺序为自左向右。图中下方红色的框中是与网络对抗密切相关的逻辑。
 
@@ -224,7 +224,7 @@ ChannelReceive::ChannelReceive(
  * 创建了一个 `webrtc::acm2::AcmReceiver` 对象，建立起了下图中标号为 **1** 和 **2** 的这两条连接；
  * 创建了一个 `webrtc::ModuleRtpRtcpImpl2` 对象，在创建这个对象时传入的 `configuration` 参数的 `outgoing_transport` 配置项指向了传入的 `webrtc::Transport`，建立起了下图中标号为 **3** 和 **4** 的这两条连接；
 
-![ChannelReceive Pipeline](https://upload-images.jianshu.io/upload_images/1315506-6ae6195ab869bf1e.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![ChannelReceive Pipeline](images/1315506-6ae6195ab869bf1e.jpg)
 
 图中标为绿色的模块为这个阶段已经接入 `webrtc::voe::(anonymous namespace)::ChannelReceive` 的模块，标为黄色的则为那些还没有接进来的模块；实线箭头表示这个阶段已经建立的连接，虚线箭头则表示还没有建立的连接。
 
@@ -260,7 +260,7 @@ void ChannelReceive::RegisterReceiverCongestionControlObjects(
 
 这样 `webrtc::AudioReceiveStream` 内部的数据处理管线的状态变为如下图所示：
 
-![ChannelReceive Pipeline 2](https://upload-images.jianshu.io/upload_images/1315506-f47d10f61a4b1c14.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![ChannelReceive Pipeline 2](images/1315506-f47d10f61a4b1c14.jpg)
 
 `webrtc::AudioReceiveStream` 的生命周期函数 `Start()` 被调用时，`webrtc::AudioReceiveStream` 被加进 `webrtc::AudioMixer`：
 
@@ -277,7 +277,7 @@ void ChannelReceive::RegisterReceiverCongestionControlObjects(
 
 这样 `webrtc::AudioReceiveStream` 的数据处理管线就此搭建完成。整个音频数据处理管线的状态变为如下图所示：
 
-![ChannelReceive Pipeline 3](https://upload-images.jianshu.io/upload_images/1315506-e6f83a068759c1db.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![ChannelReceive Pipeline 3](images/1315506-e6f83a068759c1db.jpg)
 
 ### WebRTC 音频数据接收处理的主要过程
 
@@ -346,7 +346,7 @@ WebRTC 音频数据接收处理的实现中，保存从网络上接收的音频�
 
 更加仔细地审视 WebRTC 的音频数据处理、编码和发送过程，更完整地将网络对抗考虑进来， WebRTC 的音频数据处理、编码和发送过程，及相关模块如下图：
 
-![WebRTC Audio Send Pipeline](https://upload-images.jianshu.io/upload_images/1315506-f447f3bd02a65d1b.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![WebRTC Audio Send Pipeline](images/1315506-f447f3bd02a65d1b.jpg)
 
 在 WebRTC 的音频数据处理、编码和发送过程中，编码器对于网络对抗起着巨大的作用。WebRTC 通过一个名为 audio network adapter (ANA) 的模块，根据网络状况，对编码过程进行调节。
 
