@@ -138,7 +138,7 @@ WebRTC 的音频数据接收处理的概念抽象层面的完整流程大体如�
     at webrtc/pc/channel.cc:292
 ```
 
-`webrtc::AudioReceiveStream` 通过 `webrtc::Call` 创建，传入 webrtc::AudioSendStream::Config，其中包含与 NACK、jitter buffer 最大大小、payload type 与 codec 的映射相关，及 webrtc::Transport 等各种配置。
+`webrtc::AudioReceiveStream` 通过 `webrtc::Call` 创建，传入 `webrtc::AudioReceiveStream::Config`，其中包含与 NACK、jitter buffer 最大大小、payload type 与 codec 的映射相关，及 webrtc::Transport 等各种配置。
 
 `webrtc::voe::(anonymous namespace)::ChannelReceive` 对象的构造函数如下：
 
