@@ -183,7 +183,7 @@ ChannelSend::ChannelSend(
 
 ![ChannelSend Pipeline](images/1315506-db127cdc2f427653.jpg)
 
-图中标为绿色的模块为这个阶段已经接入 `webrtc::voe::(anonymous namespace)::ChannelSend` 的模块，标为黄色的则为那些还没有接进来的模块；实现箭头表示这个阶段已经建立的连接，虚线箭头则表示还没有建立的连接。
+图中标为绿色的模块为这个阶段已经接入 `webrtc::voe::(anonymous namespace)::ChannelSend` 的模块，标为黄色的则为那些还没有接进来的模块；实线箭头表示这个阶段已经建立的连接，虚线箭头则表示还没有建立的连接。
 
 在 `ChannelSend` 的 `RegisterSenderCongestionControlObjects()` 函数中，PacedSender 发送控制相关的模块被接进来：
 ```
@@ -195,7 +195,7 @@ ChannelSend::ChannelSend(
 #3  webrtc::internal::AudioSendStream::AudioSendStream(webrtc::Clock*, webrtc::AudioSendStream::Config const&, rtc::scoped_refptr<webrtc::AudioState> const&, webrtc::TaskQueueFactory*, webrtc::RtpTransportControllerSendInterface*, webrtc::BitrateAllocatorInterface*, webrtc::RtcEventLog*, webrtc::RtcpRttStats*, absl::optional<webrtc::RtpState> const&) () at webrtc/audio/audio_send_stream.cc:110
 ```
 
-这个操作也发生在 `webrtc::AudioSendStream` 对象的创建期间。`ChannelSend` 的 `RegisterSenderCongestionControlObjects()` 函数的实现如下：
+这个操作也发生在 `webrtc::AudioSendStream` 对象创建期间。`ChannelSend` 的 `RegisterSenderCongestionControlObjects()` 函数的实现如下：
 ```
 void ChannelSend::RegisterSenderCongestionControlObjects(
     RtpTransportControllerSendInterface* transport,
@@ -348,7 +348,7 @@ void ChannelSend::StartSend() {
 }
 ```
 
-这样前面的图中标号为 **9** 的这条连接也建立起了。 `webrtc::AudioSendStream` 内部的数据处理管线最终建立完成。
+这样前面的图中标号为 **9** 的这条连接也建立起来了。 `webrtc::AudioSendStream` 内部的数据处理管线最终建立完成。
 
 将上面图中各箭头旁边的标号按照建立的次序来标，则如下图所示：
 
