@@ -91,7 +91,7 @@ WebRTC 的音频数据处理发送的概念抽象层面的完整流程如下：
 
 ### `webrtc::AudioSendStream` 实现内部的数据处理管线搭建
 
-`webrtc::AudioSendStream` 实现内部的数据处理管线是分步骤搭建的完成的。我们围绕着上面的 **webrtc::AudioSendStream Send Audio 图** 来看这个过程。
+`webrtc::AudioSendStream` 实现内部的数据处理管线是分步骤搭建完成的。我们围绕着上面的 **webrtc::AudioSendStream Send Audio 图** 来看这个过程。
 
 在  `webrtc::AudioSendStream` 对象创建，也就是 `webrtc::voe::(anonymous namespace)::ChannelSend` 对象创建时，会创建一些关键对象，并建立部分各个对象之间的联系，这个调用过程如下：
 ```
