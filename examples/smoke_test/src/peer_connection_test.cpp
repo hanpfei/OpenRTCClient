@@ -17,6 +17,7 @@
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "media_test_utils/audio_utils.h"
 #include "media_test_utils/conn_utils.h"
 #include "media_test_utils/test_base.h"
 #include "media_test_utils/vcm_capturer.h"
@@ -32,6 +33,13 @@
 #include "rtc_base/win32_socket_server.h"
 #endif
 
+#if WEBRTC_ENABLE_PROTOBUF
+#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
+#include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
+#else
+#include "modules/audio_coding/audio_network_adaptor/config.pb.h"
+#endif
+#endif
 
 static const char kAudioLabel[] = "audio_label";
 static const char kVideoLabel[] = "video_label";
@@ -667,6 +675,263 @@ TEST_F(WebrtcPeerConnectionTest, connection_audio_echo) {
     audio_track = peer_connection_factory->CreateAudioTrack(
         kAudioLabel,
         peer_connection_factory->CreateAudioSource(cricket::AudioOptions()));
+
+    auto result_or_error =
+        peer_connection_send->AddTrack(audio_track, {kStreamId});
+    if (!result_or_error.ok()) {
+      RTC_LOG(LS_WARNING) << "Failed to add audio track to PeerConnection: "
+                  << result_or_error.error().message();
+      return -1;
+    }
+    audio_sender = result_or_error.value();
+
+    return 0;
+  });
+  ASSERT_TRUE(audio_track);
+
+  /*-------- Create offer for send connection -----------*/
+  rtc::Event create_offer_event;
+  rtc::scoped_refptr<
+      CreateSessionDescriptionObserver<webrtc::PeerConnectionInterface>>
+      create_session_desc_observer_sender(
+          new rtc::RefCountedObject<CreateSessionDescriptionObserver<
+              webrtc::PeerConnectionInterface>>(
+              create_offer_event, peer_connection_send,
+              SetSessionDescriptionObserver::Create(
+                  "SendConnection:SetLocalDescription")));
+
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    peer_connection_send->CreateOffer(
+        create_session_desc_observer_sender.get(),
+        webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+    return 0;
+  });
+
+  create_offer_event.Wait(10000);
+
+  /*-------- Set remote description for receive connection --------*/
+  webrtc::SdpParseError error;
+
+  webrtc::SdpType sender_sdp_type =
+      create_session_desc_observer_sender->GetSdpType();
+  std::string sender_sdp = create_session_desc_observer_sender->GetSdpString();
+  std::unique_ptr<webrtc::SessionDescriptionInterface> sender_session_desc =
+      webrtc::CreateSessionDescription(sender_sdp_type, sender_sdp, &error);
+  ASSERT_TRUE(sender_session_desc);
+
+  EXPECT_EQ(sender_sdp_type, webrtc::SdpType::kOffer);
+  RTC_LOG(LS_INFO) << "Sender SDP type " << create_session_desc_observer_sender->GetSdpTypeStr()
+        << " and set remote description for receive connection";
+  //  LOGI("Sender SDP type %s, content %s",
+  //       create_session_desc_observer_sender->GetSdpTypeStr().c_str(),
+  //       sender_sdp.c_str());
+
+  peer_connection_recv->SetRemoteDescription(
+      SetSessionDescriptionObserver::Create(
+          "RecvConnection:SetRemoteDescription"),
+      sender_session_desc.release());
+
+  /*-------- Create answer for receive connection --------*/
+  rtc::Event create_answer_event;
+  rtc::scoped_refptr<
+      CreateSessionDescriptionObserver<webrtc::PeerConnectionInterface>>
+      session_desc_observer_recv(
+          new rtc::RefCountedObject<CreateSessionDescriptionObserver<
+              webrtc::PeerConnectionInterface>>(
+              create_answer_event, peer_connection_recv,
+              SetSessionDescriptionObserver::Create(
+                  "RecvConnection:SetLocalDescription")));
+  peer_connection_recv->CreateAnswer(
+      session_desc_observer_recv.get(),
+      webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+  create_answer_event.Wait(10000);
+
+  /*-------- Set remote description for send connection -----------*/
+  webrtc::SdpType recv_sdp_type = session_desc_observer_recv->GetSdpType();
+  std::string recv_sdp = session_desc_observer_recv->GetSdpString();
+  std::unique_ptr<webrtc::SessionDescriptionInterface> recv_session_desc =
+      webrtc::CreateSessionDescription(recv_sdp_type, recv_sdp, &error);
+
+  EXPECT_EQ(recv_sdp_type, webrtc::SdpType::kAnswer);
+  RTC_LOG(LS_INFO) << "Receiver SDP type " << session_desc_observer_recv->GetSdpTypeStr()
+      << " and set remote description for receive connection";
+  //  LOGI("Receiver SDP type %s, content %s",
+  //      session_desc_observer_recv->GetSdpTypeStr().c_str(),
+  //      recv_sdp.c_str());
+
+  if (!recv_session_desc) {
+    RTC_LOG(LS_INFO) << "Can't parse received session description message. "
+        << "SdpParseError was: %s" << error.description;
+  }
+  ASSERT_TRUE(recv_session_desc);
+
+  peer_connection_send->SetRemoteDescription(
+      SetSessionDescriptionObserver::Create(
+          "SendConnection:SetRemoteDescription"),
+      recv_session_desc.release());
+
+  conn_observer_recv->SetPeerConnection(peer_connection_send);
+  connection_observer->SetPeerConnection(peer_connection_recv);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10079));
+
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    peer_connection_send->RemoveTrack(audio_sender);
+    audio_track = nullptr;
+    peer_connection_factory = nullptr;
+    return 0;
+  });
+
+  conn_observer_recv->SetPeerConnection(nullptr);
+  connection_observer->SetPeerConnection(nullptr);
+  peer_connection_recv = nullptr;
+  peer_connection_send = nullptr;
+
+  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    adm = nullptr;
+    return 0;
+  });
+  RTC_LOG(LS_INFO) << "End";
+}
+
+TEST_F(WebrtcPeerConnectionTest, audio_network_adaptive_config) {
+  std::list<ANAConfigItem> configlist = {
+      {ANAConfigType::kFecController, 3214, 0.23f},
+      {ANAConfigType::kFrameLengthController, 7219, 0.37f},
+      {ANAConfigType::kBitrateController, 0, 0.37f},
+      {ANAConfigType::kChannelController, 0, 0.0f}
+  };
+
+  std::string config_string;
+  BuildANAConfigString(configlist, &config_string);
+
+  webrtc::audio_network_adaptor::config::ControllerManager controller_manager_config;
+  ASSERT_TRUE(controller_manager_config.ParseFromString(config_string));
+  for (int i = 0; i < controller_manager_config.controllers_size(); ++i) {
+    auto& controller_config = controller_manager_config.controllers(i);
+    switch (controller_config.controller_case()) {
+      case webrtc::audio_network_adaptor::config::Controller::kFecController:
+        RTC_LOG(LS_INFO) << "Controller::kFecController!!!";
+        break;
+      case webrtc::audio_network_adaptor::config::Controller::kFecControllerRplrBased:
+        // FecControllerRplrBased has been removed and can't be used anymore.
+        RTC_LOG(LS_INFO) << "Controller::kFecControllerRplrBased!!!";
+        continue;
+      case webrtc::audio_network_adaptor::config::Controller::kFrameLengthController:
+        RTC_LOG(LS_INFO) << "Controller::kFrameLengthController!!!";
+        break;
+      case webrtc::audio_network_adaptor::config::Controller::kChannelController:
+        RTC_LOG(LS_INFO) << "Controller::kChannelController!!!";
+        break;
+      case webrtc::audio_network_adaptor::config::Controller::kDtxController:
+        RTC_LOG(LS_INFO) << "Controller::kDtxController!!!";
+        break;
+      case webrtc::audio_network_adaptor::config::Controller::kBitrateController:
+        RTC_LOG(LS_INFO) << "Controller::kBitrateController!!!";
+        break;
+      case webrtc::audio_network_adaptor::config::Controller::kFrameLengthControllerV2:
+        RTC_LOG(LS_INFO) << "Controller::kFrameLengthControllerV2!!!";
+        break;
+      default:
+        break;
+    }
+    if (controller_config.has_scoring_point()) {
+      auto& scoring_point = controller_config.scoring_point();
+      RTC_LOG(LS_INFO) << "has_uplink_bandwidth_bps "
+          << scoring_point.has_uplink_bandwidth_bps()
+          << ", has_uplink_packet_loss_fraction "
+          << scoring_point.has_uplink_packet_loss_fraction()
+          << ", uplink_bandwidth_bps "
+          << scoring_point.uplink_bandwidth_bps()
+          << ", uplink_packet_loss_fraction "
+          << scoring_point.uplink_packet_loss_fraction();
+    }
+  }
+}
+
+TEST_F(WebrtcPeerConnectionTest, connection_audio_enable_ana) {
+  // rtc::LogMessage::SetLogToStderr(false);
+
+#if defined(WEBRTC_WIN)
+  rtc::WinsockInitializer winsock_init;
+#endif
+
+  std::shared_ptr<rtc::Thread> thread_holder = rtc::Thread::Create();
+  thread_holder->Start();
+
+  auto task_queue_facotry = webrtc::CreateDefaultTaskQueueFactory();
+  rtc::scoped_refptr<webrtc::AudioDeviceModule> adm;
+
+  std::shared_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    adm = webrtc::AudioDeviceModule::Create(
+        webrtc::AudioDeviceModule::kPlatformDefaultAudio,
+        task_queue_facotry.get());
+    return 0;
+  });
+
+  /*-------- Create peer connection factory -----------*/
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
+      peer_connection_factory;
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    peer_connection_factory = webrtc::CreatePeerConnectionFactory(
+        nullptr /* network_thread */, thread.get() /* worker_thread */,
+        nullptr /* signaling_thread */, adm /* default_adm */,
+        webrtc::CreateBuiltinAudioEncoderFactory(),
+        webrtc::CreateBuiltinAudioDecoderFactory(),
+        webrtc::CreateBuiltinVideoEncoderFactory(),
+        webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
+        nullptr /* audio_processing */);
+    return 0;
+  });
+  ASSERT_TRUE(peer_connection_factory);
+
+  /*-------- Create peer connection -----------*/
+  auto connection_observer =
+      std::make_shared<ConnectionObserver>("SendConnection");
+
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_send;
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    peer_connection_send = CreatePeerConnection(
+        /*dtls*/ true, peer_connection_factory, connection_observer);
+    return 0;
+  });
+  ASSERT_TRUE(peer_connection_send);
+
+  /*-------- To create receive peer connection -----------*/
+  auto conn_observer_recv =
+      std::make_shared<ConnectionObserver>("RecvConnection");
+
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_recv;
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    peer_connection_recv = CreatePeerConnection(
+        /*dtls*/ true, peer_connection_factory, conn_observer_recv);
+    return 0;
+  });
+  ASSERT_TRUE(peer_connection_recv);
+
+  /*-------- Create and add media tracks for send connection -----------*/
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track;
+  rtc::scoped_refptr<webrtc::RtpSenderInterface> audio_sender;
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    cricket::AudioOptions audio_options;
+#if WEBRTC_ENABLE_PROTOBUF
+    audio_options.audio_network_adaptor = true;
+    std::list<ANAConfigItem> configlist = {
+          {ANAConfigType::kFecController, 3214, 0.23f},
+//          {ANAConfigType::kFrameLengthController, 7219, 0.37f},
+//          {ANAConfigType::kBitrateController, 0, 0.37f},
+//          {ANAConfigType::kChannelController, 0, 0.0f}
+      };
+
+    std::string config_string;
+    BuildANAConfigString(configlist, &config_string);
+    audio_options.audio_network_adaptor_config = config_string;
+#endif
+    audio_track = peer_connection_factory->CreateAudioTrack(
+        kAudioLabel,
+        peer_connection_factory->CreateAudioSource(audio_options));
 
     auto result_or_error =
         peer_connection_send->AddTrack(audio_track, {kStreamId});

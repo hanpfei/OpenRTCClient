@@ -19,6 +19,8 @@ if (is_linux || is_win) {
     testonly = true
 
     sources = [
+      "smoke_test/src/media_test_utils/audio_utils.cpp",
+      "smoke_test/src/media_test_utils/audio_utils.h",
       "smoke_test/src/media_test_utils/byte_stream_utils.cpp",
       "smoke_test/src/media_test_utils/byte_stream_utils.h",
       "smoke_test/src/media_test_utils/conn_utils.cpp",
@@ -47,7 +49,8 @@ if (is_linux || is_win) {
 
     deps = [
       "//:webrtc",
-      "//test:video_test_common"
+      "//test:video_test_common",
+      "//third_party/protobuf:protobuf_lite",
     ]
   }
 
