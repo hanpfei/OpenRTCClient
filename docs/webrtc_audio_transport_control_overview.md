@@ -6,13 +6,13 @@ tags:
 - 音视频开发
 ---
 
-WebRTC 音频数据处理中，期望可以实现音频数据处理及传输，延时低，互动性好，声音平稳无抖动，码率低消耗带宽少等。在数据传输上，WebRTC 采用基于 UDP 的 RTP/RTCP 协议，RTP/RTCP 本身不提供数据的可靠传输及质量保障。公共互联网这种分组交换网络，天然具有数据包传输的丢失、重复、乱序及延时等问题。WebRTC 音频数据处理的这些目标很难同时实现，WebRTC 的音频网络对抗实现中针对不同情况对这些目标进行平衡。
+WebRTC 的音频数据处理和传输，期望可以实现延时低、互动性好、声音平稳无抖动，码率低消耗带宽少等目标。关于音频数据传输，WebRTC 采用基于 UDP 的 RTP/RTCP 协议，RTP/RTCP 本身不提供数据的可靠传输及传输质量保障，它只提供一些用于实现传输质量保障的机制，如 RTCP 的 NACK 包，发送端报告/接收端报告等。公共互联网这种分组交换网络，天然具有数据包传输的丢失、重复、乱序及延时等问题。WebRTC 音频数据处理和传输的这些目标很难同时实现，WebRTC 的音频数据处理和网络对抗系统针对不同情况（既包括网络拥塞状况，也包括不同业务场景下，音质、带宽和延迟这些不同指标的相对重要性）对这些目标进行平衡。
 <!--more-->
-这里更仔细地看一下 WebRTC 音频数据处理管线，并特别关注与音频网络对抗相关的逻辑。
+这里更仔细地审视一下 WebRTC 音频数据处理管线，并特别关注与音频网络对抗相关的逻辑。
 
-## WebRTC 的音频数据接收及解码播放控制管线
+## WebRTC 的音频数据接收及解码播放管线
 
-前面在 [WebRTC 的音频数据编码及发送控制管线](https://github.com/hanpfei/OpenRTCClient/blob/m98_4758/docs/webrtc_audio_encode_and_send_control_pipeline_build.md) 一文中分析了 WebRTC 的音频数据编码及发送控制相关逻辑，这里再来看一下 WebRTC 的音频数据接收及解码播放过程。
+前面在 [WebRTC 的音频数据编码及发送控制管线](https://github.com/hanpfei/OpenRTCClient/blob/m98_4758/docs/webrtc_audio_encode_and_send_control_pipeline_build.md) 一文中简要分析了 WebRTC 的音频数据编码及发送控制相关逻辑，这里来看一下 WebRTC 的音频数据接收及解码播放过程。
 
 WebRTC 的音频数据接收处理的概念抽象层面的完整流程大体如下：
 
@@ -47,9 +47,15 @@ WebRTC 的音频数据接收处理的概念抽象层面的完整流程大体如�
 -------------------------------------------     ---------------------
 ```
 
-对于 WebRTC 的音频数据接收处理过程，`webrtc::AudioDeviceModule` 负责把声音 PCM 数据通过系统接口送进设备播放出来。`webrtc::AudioDeviceModule` 内部一般会起专门的播放线程，由播放线程驱动整个解码播放过程。`webrtc::AudioTransport` 作为一个适配和胶水模块，它把音频数据播放和 `webrtc::AudioProcessing` 的音频数据处理及混音等结合起来，它通过 `webrtc::AudioMixer` 同步获取并混音各个远端音频流，这些混音之后的音频数据除了返回给 `webrtc::AudioDeviceModule` 用于播放外，还会被送进 `webrtc::AudioProcessing`，以作为回声消除的参考信号。`webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream` 为播放过程提供解码之后的数据。RTCP 反馈在 `webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream` 中会通过 `webrtc::Transport` 发送出去。`webrtc::Transport` 也是一个适配和胶水模块，它通过 `cricket::MediaChannel::NetworkInterface` 实际将数据包发送网络。`cricket::MediaChannel` 从网络中接收音频数据包并送进 `webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream`。
+`webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream` 为 WebRTC 的音频数据接收处理过程的中心，它一方面接收 RTCP 包，以及通过它内部的 `webrtc::voe::(anonymous namespace)::ChannelReceive` 接收传过来的音频 RTP 包；另一方面，它从不中断地为播放过程提供解码之后的音频 PCM 数据。
 
-如果将音频数据接收处理流水线上的适配和胶水模块省掉，音频数据接收处理流水线将可简化为类似下面这样：
+对于 WebRTC 的音频数据接收及解码处理过程，`webrtc::AudioDeviceModule` 主要负责把音频 PCM 数据通过操作系统提供的接口送进播放设备播放出来。`webrtc::AudioDeviceModule` 内部一般会起专门的播放线程，播放线程驱动整个解码及播放过程。`webrtc::AudioTransport` 作为一个适配和胶水模块，它把音频数据播放和 `webrtc::AudioProcessing` 的音频数据处理及解码和混音等操作结合起来，它通过 `webrtc::AudioMixer` 同步从 `webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream` 获取并混音各个远端音频流。混音之后的音频数据除了返回给 `webrtc::AudioDeviceModule` 用于播放外，还会被送进 `webrtc::AudioProcessing`，以作为回声消除的参考信号。
+
+RTCP 反馈在 `webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream` 中通过 `webrtc::Transport` 发送出去。`webrtc::Transport` 也是一个适配和胶水模块，它通过 `cricket::MediaChannel::NetworkInterface` 将数据包实际发送到网络。
+
+`cricket::MediaChannel` 从网络接收 RTP 音频数据包和 RTCP 包并送进 `webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream`。
+
+如果将音频数据接收、解码处理流水线上的适配和胶水模块省掉，音频数据接收、解码处理流水线将可简化为类似下面这样：
 
 ```
 -----------------------------     ---------------------------
@@ -80,37 +86,38 @@ WebRTC 的音频数据接收处理的概念抽象层面的完整流程大体如�
 ------------------------------------------------------------------------
 ```
 
-`webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream` 是整个过程的中心，其实现位于 `webrtc/audio/audio_receive_stream.h` / `webrtc/audio/audio_receive_stream.cc`，相关的类层次结构如下图：
+`webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream` 的实现位于 `webrtc/audio/audio_receive_stream.h` / `webrtc/audio/audio_receive_stream.cc`，相关的类层次结构如下图：
 
 ![webrtc::AudioReceiveStream](images/1315506-0ada9d4b74bc904f.jpg)
 
-在 RTC 中，为了实现交互和低延迟，音频数据接收处理不能只做包的重排序和解码，它还要充分考虑网络对抗，如 PLC 及发送 RTCP 反馈等，这也是一个相当复杂的过程。WebRTC 的设计大量采用了控制流与数据流分离的思想，这在 `webrtc::AudioReceiveStream` 的设计与实现中也有体现。分析 `webrtc::AudioReceiveStream` 的设计与实现时，也可以从配置及控制，和数据流两个角度来看。
+在 RTC 中，为了实现语音交互和低延迟，音频数据接收解码处理不能只是简单的包的重排序和解码，它还要充分考虑网络对抗，如丢包和网络拥塞等，它需要实现 PLC 及发送 RTCP 反馈等机制，这也是一个相当复杂的过程。WebRTC 的设计大量采用了控制流与数据流分离的设计思想，这在 `webrtc::AudioReceiveStream` 的设计与实现中也有体现。分析 `webrtc::AudioReceiveStream` 的设计与实现时，可以从配置及控制和数据流两个角度来看。
 
-可以对 `webrtc::AudioReceiveStream` 执行的配置和控制主要有如下这些：
+可以对 `webrtc::AudioMixer::Source` / `webrtc::AudioReceiveStream` 执行的配置和控制主要有如下这些：
 
- * NACK，jitter buffer 最大大小，payload type 与 codec 的映射等；
+ * NACK 开关，jitter buffer 最大大小，payload type 与 codec 的映射等；
  * 配置用于把 RTCP 包发送到网络的 `webrtc::Transport` 、解密参数等；
  * `webrtc::AudioReceiveStream` 的生命周期控制，如启动停止等；
 
 对于数据流，一是从网络中接收到的数据包被送进 `webrtc::AudioReceiveStream`；二是播放时，`webrtc::AudioDeviceModule` 从 `webrtc::AudioReceiveStream` 获得解码后的数据，并送进播放设备播放出来；三是 `webrtc::AudioReceiveStream` 发送 RTCP 反馈包给发送端以协助实现拥塞控制，对编码发送过程产生影响。
 
-`webrtc::AudioReceiveStream` 的实现中，最主要的数据处理流程 —— 音频数据接收、解码及播放过程，及相关模块如下图：
+`webrtc::AudioReceiveStream` 的实现中，最主要的数据处理流程 —— 音频数据接收、解码和播放过程，及相关模块如下图：
 
 ![WebRTC Audio Receive, Decode and Play](images/1315506-c90f7d7399903442.jpg)
 
-这个图中的箭头表示数据流动的方向，数据在各个模块中处理的先后顺序为自左向右。图中下方红色的框中是与网络对抗密切相关的逻辑。
+这个图中的箭头表示数据流动的方向，数据在各个模块中处理的先后顺序为自左向右。图中下方红色的框是与网络对抗密切相关的逻辑。
 
-`webrtc::AudioReceiveStream` 的实现的数据处理流程中，输入数据为音频网络数据包和对端发来的 RTCP 包，来自于 `cricket::MediaChannel`，输出数据为解码后的 PCM 数据，被送给 `webrtc::AudioTransport`，以及构造的 RTCP 反馈包，如 TransportCC、RTCP NACK 包，被送给 `webrtc::Transport` 发出去。
+`webrtc::AudioReceiveStream` 实现的数据处理流程，输入数据为 RTP 音频网络数据包和对端发来的 RTCP 包，它们来自于 `cricket::MediaChannel`，输出数据为解码后的 PCM 数据，被送给 `webrtc::AudioTransport`，以及构造的 RTCP 反馈包，如 TransportCC、RTCP NACK 包，被送给 `webrtc::Transport` 发出去。
 
-`webrtc::AudioReceiveStream` 的实现内部，音频网络数据包最终被送进 NetEQ 的缓冲区 `webrtc::PacketBuffer` 里，播放时 NetEQ 做解码、PLC 等，解码后的数据提供给 `webrtc::AudioDeviceModule`。
+`webrtc::AudioReceiveStream` 的实现内部，RTP 音频网络数据包最终被送进 NetEQ 的缓冲区 `webrtc::PacketBuffer` 里，播放时 NetEQ 从 `webrtc::PacketBuffer` 中取出音频数据包，做解码、PLC 等处理，处理后的数据提供给 `webrtc::AudioDeviceModule`。
 
-### WebRTC 音频数据接收处理流水线的搭建过程
+### WebRTC 音频数据接收解码处理流水线的搭建过程
 
-这里先来看一下，`webrtc::AudioReceiveStream` 实现的这个数据处理流水线的搭建过程。
+这里先来看一下，`webrtc::AudioReceiveStream` 实现的音频数据处理流水线的搭建过程。
 
-`webrtc::AudioReceiveStream` 实现的数据处理管线是分步骤搭建完成的。我们围绕上面的 **`webrtc::AudioReceiveStream` 数据处理流程图** 来看这个过程。
+`webrtc::AudioReceiveStream` 实现的音频数据处理流水线是分步骤搭建完成的。我们围绕上面的 **`webrtc::AudioReceiveStream` 音频数据处理过程图** 来看这个过程。
 
 在 `webrtc::AudioReceiveStream` 对象创建，也就是 `webrtc::voe::(anonymous namespace)::ChannelReceive` 对象创建时，会创建一些关键对象，并建立部分对象之间的联系，这个调用过程如下：
+
 ```
 #0  webrtc::voe::(anonymous namespace)::ChannelReceive::ChannelReceive(webrtc::Clock*, webrtc::NetEqFactory*, webrtc::AudioDeviceModule*, webrtc::Transport*, webrtc::RtcEventLog*, unsigned int, unsigned int, unsigned long, bool, int, bool, bool, rtc::scoped_refptr<webrtc::AudioDecoderFactory>, absl::optional<webrtc::AudioCodecPairId>, rtc::scoped_refptr<webrtc::FrameDecryptorInterface>, webrtc::CryptoOptions const&, rtc::scoped_refptr<webrtc::FrameTransformerInterface>)
     (this=0x61b000008c80, clock=0x602000003bb0, neteq_factory=0x0, audio_device_module=0x614000010040, rtcp_send_transport=0x619000017cb8, rtc_event_log=0x613000011f40, local_ssrc=4195875351, remote_ssrc=1443723799, jitter_buffer_max_packets=200, jitter_buffer_fast_playout=false, jitter_buffer_min_delay_ms=0, jitter_buffer_enable_rtx_handling=false, enable_non_sender_rtt=false, decoder_factory=..., codec_pair_id=..., frame_decryptor=..., crypto_options=..., frame_transformer=...) at webrtc/audio/channel_receive.cc:517
@@ -138,9 +145,9 @@ WebRTC 的音频数据接收处理的概念抽象层面的完整流程大体如�
     at webrtc/pc/channel.cc:292
 ```
 
-`webrtc::AudioReceiveStream` 通过 `webrtc::Call` 创建，传入 `webrtc::AudioReceiveStream::Config`，其中包含与 NACK、jitter buffer 最大大小、payload type 与 codec 的映射相关，及 webrtc::Transport 等各种配置。
+在收发双方的连接协商阶段，`webrtc::AudioReceiveStream` 通过 `webrtc::Call` 创建，传入 `webrtc::AudioReceiveStream::Config`，其中包含与 NACK 开关、jitter buffer 最大大小、payload type 与 codec 的映射，及 `webrtc::Transport` 等各种配置项。
 
-`webrtc::voe::(anonymous namespace)::ChannelReceive` 对象的构造函数如下：
+`webrtc::voe::(anonymous namespace)::ChannelReceive` 类的构造函数如下：
 
 ```
 ChannelReceive::ChannelReceive(
@@ -219,16 +226,16 @@ ChannelReceive::ChannelReceive(
 }
 ```
 
-`webrtc::voe::(anonymous namespace)::ChannelReceive` 对象的构造函数的执行过程如下：
+`webrtc::voe::(anonymous namespace)::ChannelReceive` 类的构造函数的执行过程如下：
 
- * 创建了一个 `webrtc::acm2::AcmReceiver` 对象，建立起了下图中标号为 **1** 和 **2** 的这两条连接；
- * 创建了一个 `webrtc::ModuleRtpRtcpImpl2` 对象，在创建这个对象时传入的 `configuration` 参数的 `outgoing_transport` 配置项指向了传入的 `webrtc::Transport`，建立起了下图中标号为 **3** 和 **4** 的这两条连接；
+ * 创建一个 `webrtc::acm2::AcmReceiver` 对象，建立起下图中标号为 **1** 和 **2** 的这两条连接；
+ * 创建一个 `webrtc::ModuleRtpRtcpImpl2` 对象，在创建这个对象时传入的 `configuration` 参数的 `outgoing_transport` 配置项指向了传入的 `webrtc::Transport`，建立起下图中标号为 **3** 和 **4** 的这两条连接；
 
 ![ChannelReceive Pipeline](images/1315506-6ae6195ab869bf1e.jpg)
 
-图中标为绿色的模块为这个阶段已经接入 `webrtc::voe::(anonymous namespace)::ChannelReceive` 的模块，标为黄色的则为那些还没有接进来的模块；实线箭头表示这个阶段已经建立的连接，虚线箭头则表示还没有建立的连接。
+图中标为绿色的模块为这个阶段已经接入 `webrtc::voe::(anonymous namespace)::ChannelReceive` 的音频数据处理流水线的模块，标为黄色的则是那些还没有接进来的模块；实线箭头表示这个阶段已经建立的连接，虚线箭头表示还没有建立的连接。
 
-在 `ChannelReceive` 的 `RegisterReceiverCongestionControlObjects()` 函数中，`webrtc::PacketRouter` 被接进来：
+在 `ChannelReceive` 的 `RegisterReceiverCongestionControlObjects()` 函数中，`webrtc::PacketRouter` 被接进来。这个操作也发生在 `webrtc::AudioReceiveStream` 对象创建期间。这个过程详细如下：
 
 ```
 #0  webrtc::voe::(anonymous namespace)::ChannelReceive::RegisterReceiverCongestionControlObjects(webrtc::PacketRouter*)
@@ -242,7 +249,7 @@ ChannelReceive::ChannelReceive(
     at webrtc/call/call.cc:954
 ```
 
-这个操作也发生在 `webrtc::AudioReceiveStream` 对象创建期间。`ChannelReceive` 的 `RegisterReceiverCongestionControlObjects()` 函数的实现如下：
+`ChannelReceive` 的 `RegisterReceiverCongestionControlObjects()` 函数实现如下：
 
 ```
 void ChannelReceive::RegisterReceiverCongestionControlObjects(
@@ -258,7 +265,7 @@ void ChannelReceive::RegisterReceiverCongestionControlObjects(
 
 这里 `webrtc::PacketRouter` 和 `webrtc::ModuleRtpRtcpImpl2` 被连接起来，前面图中标号为 **5** 的这条连接也建立起来了。NetEQ 在需要音频解码器时创建音频解码器，这个过程这里不再赘述。
 
-这样 `webrtc::AudioReceiveStream` 内部的数据处理管线的状态变为如下图所示：
+这样，`webrtc::AudioReceiveStream` 内部的音频数据处理管线的状态变为如下图所示：
 
 ![ChannelReceive Pipeline 2](images/1315506-f47d10f61a4b1c14.jpg)
 
@@ -275,11 +282,11 @@ void ChannelReceive::RegisterReceiverCongestionControlObjects(
 #4  cricket::VoiceChannel::UpdateMediaSendRecvState_w() (this=0x619000018180) at webrtc/pc/channel.cc:811
 ```
 
-这样 `webrtc::AudioReceiveStream` 的数据处理管线就此搭建完成。整个音频数据处理管线的状态变为如下图所示：
+`webrtc::AudioTransport` 通过 `webrtc::AudioMixer` 从 `webrtc::AudioReceiveStream` 获取音频 PCM 数据，自此 `webrtc::AudioReceiveStream` 被加进 WebRTC 音频播放数据流水线。这样 `webrtc::AudioReceiveStream` 的音频数据处理流水线搭建完成。整个音频数据处理流水线的状态变为如下图所示：
 
 ![ChannelReceive Pipeline 3](images/1315506-e6f83a068759c1db.jpg)
 
-### WebRTC 音频数据接收处理的主要过程
+### WebRTC 音频数据接收解码处理的主要过程
 
 WebRTC 音频数据接收处理的实现中，保存从网络上接收的音频数据包的缓冲区为 NetEQ 的 `webrtc::PacketBuffer`，收到音频数据包并保存进 NetEQ 的 `webrtc::PacketBuffer` 的过程如下面这样：
 
@@ -312,7 +319,9 @@ WebRTC 音频数据接收处理的实现中，保存从网络上接收的音频�
     (this=0x606000074c68) at webrtc/media/engine/webrtc_voice_engine.cc:2229
 ```
 
-播放时，`webrtc::AudioDeviceModule` 最终会向 NetEQ 请求 PCM 数据，此时 NetEQ 会从 `webrtc::PacketBuffer` 中取出数据包并解码。网络中传输的音频数据包中包含的音频采样点和 `webrtc::AudioDeviceModule` 每次请求的音频采样点不一定是完全相同的，比如采样率为 48kHz 的音频，`webrtc::AudioDeviceModule` 每次请求 10ms 的数据，也就是 480 个采样点，而 OPUS 音频编解码器每个编码帧中包含 20ms 的数据，也就是 960 个采样点，这样 NetEQ 返回 `webrtc::AudioDeviceModule` 每次请求的采样点之后，可能会有解码音频数据的剩余，这需要一个专门的 PCM 数据缓冲区。这个数据缓冲区为 NetEQ 的 `webrtc::SyncBuffer`。
+`webrtc::PacketBuffer` 会对送进来的音频数据包按照序列号等进行排序。
+
+播放时，`webrtc::AudioDeviceModule` 最终会向 NetEQ 请求 PCM 数据，此时 NetEQ 会从 `webrtc::PacketBuffer` 中取出数据包并解码。网络中传输的音频数据包中包含的音频采样点个数和 `webrtc::AudioDeviceModule` 每次请求的音频采样点个数不一定是完全相同的，比如采样率为 48kHz 的音频，`webrtc::AudioDeviceModule` 每次请求 10ms 的数据，也就是每通道 480 个采样点，而 OPUS 音频编解码器配置为每个编码帧中包含 20ms 的数据，也就是每通道 960 个采样点，这样 NetEQ 给 `webrtc::AudioDeviceModule` 返回请求的采样点之后，可能会有解码音频数据的剩余。此外，NetEQ 对丢失的包做 PLC，或者突然到达的音频包过多时做的合并，都可能使解码的音频数据和实际播放的音频数据不太一样。这就需要一个专门的 PCM 数据缓冲区。这个数据缓冲区为 NetEQ 的 `webrtc::SyncBuffer`。
 
 `webrtc::AudioDeviceModule` 请求播放数据的大体过程如下面这样：
 
@@ -342,35 +351,47 @@ WebRTC 音频数据接收处理的实现中，保存从网络上接收的音频�
     at webrtc/modules/audio_device/linux/audio_device_pulse_linux.cc:2106
 ```
 
+`webrtc::AudioDeviceModule` 最终向 NetEQ 请求数据时，NetEQ 做解码，做 PLC 或者合并数据，处理之后的数据被放进 `webrtc::SyncBuffer`，之后再从 `webrtc::SyncBuffer` 获取一定量的数据返回回去。
+
 ## 再来看 WebRTC 的音频数据处理、编码和发送过程
 
-更加仔细地审视 WebRTC 的音频数据处理、编码和发送过程，更完整地将网络对抗考虑进来， WebRTC 的音频数据处理、编码和发送过程，及相关模块如下图：
+更加仔细地审视 WebRTC 的音频数据处理、编码和发送过程，将网络对抗考虑进来， WebRTC 的音频数据处理、编码和发送过程，及相关模块如下图：
 
 ![WebRTC Audio Send Pipeline](images/1315506-f447f3bd02a65d1b.jpg)
 
-在 WebRTC 的音频数据处理、编码和发送过程中，编码器对于网络对抗起着巨大的作用。WebRTC 通过一个名为 audio network adapter (ANA) 的模块，根据网络状况，对编码过程进行调节。
+在 WebRTC 的音频数据处理、编码和发送过程中，编码器对于网络对抗起着巨大的作用。OPUS 音频编码器支持动态配置码率、通道数、编码帧长度、DTX 和带内 FEC 等编码参数，这些配置可以在创建 `webrtc::AudioSendStream` 时指定。此外，WebRTC 还提供了一个名为 audio network adapter (ANA) 的模块，通过它可以根据网络状况，对编码过程的各个参数进行动态调节。
 
-pacing 模块平滑地将媒体数据发送到网络，拥塞控制 congestion control 模块通过影响 pacing 模块来影响媒体数据发送的过程，以达到控制拥塞的目的。
+pacing 模块平滑可控地将媒体数据发送到网络，拥塞控制 congestion control 模块，以网络状况信息为输入，如 RTT 和丢包率等，通过影响 pacing 模块来影响媒体数据发送过程，以达到控制拥塞的目的。
 
 ## WebRTC 的音频网络对抗概述
 
-由 WebRTC 的音频采集、处理、编码和发送过程，及音频的接收、解码、处理及播放过程，可以粗略梳理出 WebRTC 的音频网络对抗的复杂机制：
+由 WebRTC 的音频采集、处理、编码和发送过程，及音频的接收、解码、处理及播放过程，可以粗略地看到 WebRTC 音频弱网对抗主要在三个方面，一是编码，二是传输控制，三是解码。由于音频数据传输所需的带宽一般比较小，在编码阶段和解码阶段都更多地为网络对抗做了处理。
 
- * OPUS audio codec：OPUS 支持的音频编码配置有带内 FEC，DTX，CBR/VBR，码率等。
- * RED。
- * audio network adapter (ANA)，ANA 通过根据网络状况，影响编码过程来做网络对抗，主要用在 OPUS 编码器中。ANA 可以影响编码过程的 5 个参数：
+可以粗略梳理出 WebRTC 的音频网络对抗的复杂机制：
+
+编码阶段：
+
+ * OPUS audio codec：OPUS 支持的音频编码配置有带内 FEC，DTX，CBR/VBR，码率和通道数等，这些配置项可以静态配置，也可以动态配置。
+ * audio network adapter (ANA)，ANA 通过根据网络状况，影响编码过程来做网络对抗，主要用在 OPUS 编码器中。ANA 根据网络状况动态配置 OPUS 编码器支持的那些配置项。ANA 可以影响的编码过程的 5 个参数：
     - 带内 FEC，OPUS 编码器可以生成带内 FEC，当有丢包时，可以通过 FEC 信息部分恢复丢失的信息，尽管 FEC 的信息质量可能不是很高；用来抗丢包；
     - DTX，当要编码的数据长期为空数据时，可以生成 DTX 包来降低码率，这种机制可能会导致延迟变大；
     - 码率；
     - 帧长度，OPUS 支持从 10ms 到 120 ms 的编码帧长度；
     - 通道数。
+ * RED。
+
+传输控制：
+
  * pacing，数据包的平滑发送。
  * congestion_controller/goog_cc，拥塞控制探测网络状况，并通过影响 pacing 来影响发送节奏。
  * NACK，丢包时，接收端请求发送端重传部分数据包；NACK 列表由 NetEQ 维护。
+
+解码阶段：
+
  * Jitter buffer，重排序数据包，抗网络抖动。NetEQ 保存接收的音频网络数据包的地方。
  * PLC，丢包时，生成丢失的数据。由 NetEQ 执行。
 
-没看到 WebRTC 有音频带外 FEC 机制的实现。
+目前没看到 WebRTC 有音频带外 FEC 机制的实现。
 
 **参考文章**
 
