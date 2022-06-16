@@ -3,8 +3,9 @@
 import os
 import sys
 import build_args_handler
-from configuration import Configuration
 import json
+import utils
+from configuration import Configuration
 from utils import run_or_die
 from utils import add_feature, get_platform_name, use_clang
 from prepare_build import prepare_gen_android, prepare_build_android, prepare_gen_linux, prepare_gen_common
@@ -178,11 +179,49 @@ def build_solution(config):
     print("build success")
 
 
+def find_absolute_target(config):
+  cmd = "{0} ls {1} --root={2}".format(
+    config.gn_bin_path, config.build_dir, config.webrtc_path
+  )
+  ret, output = utils.run_cmd(cmd, 2)
+  found_target = None
+  for target in output.readlines():
+    target = target.decode()[:-1]
+    target = target.strip()
+    if config.build_target == target:
+      found_target = target
+      break
+
+    paths = target.split(':')
+    if len(paths) == 2 and paths[1] == config.build_target:
+      found_target = target
+      break
+  output.close()
+  return found_target
+
+
+def print_target_description(config):
+  target = find_absolute_target(config)
+  cmd = "{0} desc {1} --root={2} {3}".format(
+    config.gn_bin_path, config.build_dir, config.webrtc_path, target
+  )
+  run_or_die(cmd)
+
+
+def print_target_deps_tree(config):
+  target = find_absolute_target(config)
+  cmd = "{0} desc {1} --root={2} {3} deps --tree".format(
+    config.gn_bin_path, config.build_dir, config.webrtc_path, target
+  )
+  run_or_die(cmd)
+
+
 COMMANDS = {
     "gen": lambda x: generate_solution(x),
     "build": lambda x: build_solution(x),
     "clean": lambda x: x,
-    "info": lambda x: x,
+    "info": lambda x: print_target_description(x),
+    "deps_tree": lambda x: print_target_deps_tree(x),
 }
 
 

@@ -53,18 +53,24 @@ def add_feature(arg, config, overwrite=False):
         config.gn_args_config[k] = v
 
 
-def run_cmd(cmd, show_output=True):
-    if show_output:
+# Output mode 0: print into stdout
+# Output mode 1: print into null device
+# Output mode 2: return to caller
+def run_cmd(cmd, output_mode=0):
+    if output_mode == 0:
         print(cmd)
+
     FNULL = open(os.devnull, 'w')
     import subprocess
-    if show_output:
+    if output_mode == 0:
         pipe = subprocess.Popen(cmd, stderr=sys.stderr, stdout=sys.stdout, shell=True)
-    else:
+    elif output_mode == 1:
         pipe = subprocess.Popen(cmd, stderr=FNULL, stdout=FNULL, shell=True)
+    elif output_mode == 2:
+        pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     ret = pipe.wait()
     FNULL.close()
-    return ret
+    return ret, pipe.stdout
 
 
 def run_cmd_with_args(cmd, show_output=True):
@@ -76,9 +82,14 @@ def run_cmd_with_args(cmd, show_output=True):
 
 
 def run_or_die(cmd, show_output=True):
-    if run_cmd(cmd, show_output) != 0:
+    if show_output:
+        ret, _ = run_cmd(cmd, 0)
+    else:
+        ret, _ = run_cmd(cmd, 1)
+    if ret != 0:
         print("CMD: {} fail".format(cmd))
         sys.exit(-1)
+
     return 0
 
 
