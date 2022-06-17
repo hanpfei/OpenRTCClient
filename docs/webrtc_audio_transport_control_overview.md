@@ -391,7 +391,96 @@ pacing 模块平滑可控地将媒体数据发送到网络，拥塞控制 conges
  * Jitter buffer，重排序数据包，抗网络抖动。NetEQ 保存接收的音频网络数据包的地方。
  * PLC，丢包时，生成丢失的数据。由 NetEQ 执行。
 
-目前没看到 WebRTC 有音频带外 FEC 机制的实现。
+比较新的版本的 WebRTC 已经看不到音频带外 FEC 了。一些老版本支持用 ULPFEC 来为音频生成 FEC 包，如 M88 版：
+```
+ChannelSend::ChannelSend(
+    Clock* clock,
+    TaskQueueFactory* task_queue_factory,
+    ProcessThread* module_process_thread,
+    Transport* rtp_transport,
+    RtcpRttStats* rtcp_rtt_stats,
+    RtcEventLog* rtc_event_log,
+    FrameEncryptorInterface* frame_encryptor,
+    const webrtc::CryptoOptions& crypto_options,
+    bool extmap_allow_mixed,
+    int rtcp_report_interval_ms,
+    uint32_t ssrc,
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
+    TransportFeedbackObserver* feedback_observer,
+    const UlpfecConfig& ulpfec_config)
+    : event_log_(rtc_event_log),
+      _timeStamp(0),  // This is just an offset, RTP module will add it's own
+                      // random offset
+      _moduleProcessThreadPtr(module_process_thread),
+      input_mute_(false),
+      previous_frame_muted_(false),
+      _includeAudioLevelIndication(false),
+      rtcp_observer_(new VoERtcpObserver(this)),
+      feedback_observer_(feedback_observer),
+      rtp_packet_pacer_proxy_(new RtpPacketSenderProxy()),
+      retransmission_rate_limiter_(
+          new RateLimiter(clock, kMaxRetransmissionWindowMs)),
+      frame_encryptor_(frame_encryptor),
+      crypto_options_(crypto_options),
+      encoder_queue_(task_queue_factory->CreateTaskQueue(
+          "AudioEncoder",
+          TaskQueueFactory::Priority::NORMAL)) {
+  RTC_DCHECK(module_process_thread);
+  module_process_thread_checker_.Detach();
+
+  audio_coding_.reset(AudioCodingModule::Create(AudioCodingModule::Config()));
+
+  RtpRtcpInterface::Configuration configuration;
+  configuration.bandwidth_callback = rtcp_observer_.get();
+  configuration.transport_feedback_callback = feedback_observer_;
+  configuration.clock = (clock ? clock : Clock::GetRealTimeClock());
+  configuration.audio = true;
+  configuration.outgoing_transport = rtp_transport;
+
+  configuration.paced_sender = rtp_packet_pacer_proxy_.get();
+
+  configuration.event_log = event_log_;
+  configuration.rtt_stats = rtcp_rtt_stats;
+  configuration.retransmission_rate_limiter =
+      retransmission_rate_limiter_.get();
+  configuration.extmap_allow_mixed = extmap_allow_mixed;
+  configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
+
+  configuration.local_media_ssrc = ssrc;
+
+  RTPSenderAudio::Config rtp_sender_audio_config;
+  fec_generator_ = MaybeCreateFecGenerator(clock, ulpfec_config);
+  configuration.fec_generator = fec_generator_.get();
+
+  rtp_sender_audio_config.fec_generator = fec_generator_.get();
+  rtp_sender_audio_config.clock = configuration.clock;
+  if (fec_generator_) {
+    rtp_sender_audio_config.fec_type = fec_generator_->GetFecType();
+    rtp_sender_audio_config.fec_overhead_bytes =
+        fec_generator_->MaxPacketOverhead();
+    rtp_sender_audio_config.red_payload_type = ulpfec_config.red_payload_type;
+
+    FecProtectionParams defaultParams;
+
+    std::string trial_string = field_trial::FindFullName("Shopee-Audio-Ulpfec");
+
+    webrtc::FieldTrialParameter<double> fec_rate_double("fec_rate", 0.5);
+    webrtc::FieldTrialParameter<int> max_fec_frames("max_fec_frames", 8);
+    ParseFieldTrial({&fec_rate_double, &max_fec_frames}, trial_string);
+    defaultParams.fec_rate = (int)(fec_rate_double * 256 + 0.5);
+    defaultParams.max_fec_frames = max_fec_frames;
+    defaultParams.fec_rate = GetBetween(defaultParams.fec_rate, 1, 255);
+    defaultParams.max_fec_frames =
+        GetBetween(defaultParams.max_fec_frames, 1, 48);
+    fec_generator_->SetProtectionParameters(defaultParams, defaultParams);
+  }
+
+  rtp_rtcp_ = ModuleRtpRtcpImpl2::Create(configuration);
+  rtp_rtcp_->SetSendingMediaStatus(false);
+
+  rtp_sender_audio_config.rtp_sender = rtp_rtcp_->RtpSender();
+  rtp_sender_audio_ = std::make_unique<RTPSenderAudio>(rtp_sender_audio_config);
+```
 
 **参考文章**
 
