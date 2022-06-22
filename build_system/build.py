@@ -231,6 +231,13 @@ def list_targets(config):
   run_or_die(cmd)
 
 
+def list_args(config):
+  cmd = "{0} args --list {1} --root={2}".format(
+    config.gn_bin_path, config.build_dir, config.webrtc_path
+  )
+  run_or_die(cmd)
+
+
 COMMANDS = {
     "gen": lambda x: generate_solution(x),
     "build": lambda x: build_solution(x),
@@ -238,6 +245,7 @@ COMMANDS = {
     "info": lambda x: print_target_description(x),
     "deps_tree": lambda x: print_target_deps_tree(x),
     "list": lambda x: list_targets(x),
+    "args": lambda x: list_args(x),
 }
 
 

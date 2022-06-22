@@ -27,7 +27,7 @@ def build_args_handler(accept_range=[], is_mandatory=True):
     return decorator
 
 
-@build_args_handler(accept_range=["gen", "build", "clean", "info", "deps_tree", "list"])
+@build_args_handler(accept_range=["gen", "build", "clean", "info", "deps_tree", "list", "args"])
 def handle_build_command(**kwargs):
     argv = kwargs.get('value')
     config = kwargs.get('config')
