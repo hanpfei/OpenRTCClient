@@ -93,6 +93,7 @@ if (!build_with_chromium) {
     if (target_os == "android") {
       deps += [ "tools_webrtc:binary_version_check" ]
     }
+    deps += [ "third_party/breakpad:crash_catch_system" ]
   }
 }
 

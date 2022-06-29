@@ -13,7 +13,7 @@ group("examples") {
   }
 }
 
-if (is_linux || is_win) {
+if (is_linux || is_win || is_mac) {
   rtc_executable("smoke_test") {
     visibility = [ "//*", ":*" ]
     testonly = true
@@ -35,6 +35,7 @@ if (is_linux || is_win) {
 
     sources += [
       "smoke_test/src/camera_capture_test.cpp",
+      "smoke_test/src/crash_catch_test.cpp",
       "smoke_test/src/peer_connection_test.cpp",
       "smoke_test/src/video_codec_test.cpp",
     ]
@@ -42,6 +43,14 @@ if (is_linux || is_win) {
     sources += [
       "smoke_test/src/main.cpp",
     ]
+
+    defines = [ "BUILD_ROOT=\"${root_out_dir}\"" ]
+
+    if (is_mac) {
+      configs += [
+        "//third_party/breakpad:client_config",
+      ]
+    }
 
     public_deps = [
       "//third_party/googletest:gtest",
@@ -51,6 +60,7 @@ if (is_linux || is_win) {
       "//:webrtc",
       "//test:video_test_common",
       "//third_party/protobuf:protobuf_lite",
+      "//third_party/breakpad:breakpad_client",
     ]
   }
 
