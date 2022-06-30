@@ -217,7 +217,11 @@ def pack_ios(config):
 def pack_mac(config):
     output_dir = os.path.join(os.path.abspath("."), "build", config.target_os, config.build_type)
     archs = target_archs.get(config.target_os)
-    gn_target_names = ["webrtc", "mac_framework_objc", "crash_catch_system"]
+    if not config.target or config.target == "":
+        gn_target_names = ["webrtc", "mac_framework_objc", "crash_catch_system"]
+    else:
+        gn_target_names = [ config.target ]
+
     build_dirs = {}
     for arch in archs:
         build_dir = None
@@ -229,8 +233,12 @@ def pack_mac(config):
                 build_library(config, arch, target)
         print("")
 
-    merge_framework_slice(output_dir, build_dirs)
-    print("")
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
+    if "mac_framework_objc" in gn_target_names:
+        merge_framework_slice(output_dir, build_dirs)
+        print("")
 
     build_dir = build_dirs.get(archs[0])
     # lib_dsym_dir_path = os.path.join(build_dir, 'WebRTC.dSYM')
@@ -239,14 +247,24 @@ def pack_mac(config):
     #    merge_dSYM_slices(config, output_dir, build_dirs, gn_target_name)
     #    print("")
 
-    gn_target_name = "webrtc"
+    if not config.target or config.target == "":
+        gn_target_name = "webrtc"
+    else:
+        gn_target_name = config.target
+
     build_dirs = {}
     for arch in archs:
         build_dir = build_target(config, arch, gn_target_name)
         build_dirs[arch] = build_dir
         print("")
 
-    target_files = ["libwebrtc.a", "libbreakpad_client.a"]
+    if not config.target or config.target == "":
+        target_files = ["libwebrtc.a", "libbreakpad_client.a"]
+    else:
+        if config.target == "crash_catch_system":
+            target_files = ["libbreakpad_client.a"]
+        else:
+            target_files = ["lib" + str(config.target) + ".a"]
 
     for target_file in target_files:
         output_files = merge_static_library(output_dir, build_dirs, target_file)
@@ -339,6 +357,7 @@ class PackConfig(object):
     def __init__(self):
         self.target_os = ""
         self.build_type = ""
+        self.target = ""
 
 
 def die_with_print_usage(status, additional_msg=None, script_path=None):
@@ -368,6 +387,9 @@ def main(args):
 
   config.target_os = args[0].strip()
   config.build_type = args[1].strip()
+  if len(args) >= 3:
+      config.target = args[2].strip()
+
   func = COMMANDS.get(config.target_os)
   if not func:
       print("Invalid target os " + str(config.target_os))
