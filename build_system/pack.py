@@ -3,6 +3,7 @@
 
 import build
 import distutils.dir_util
+from genericpath import isdir
 import os
 import subprocess
 from shutil import copyfile
@@ -131,26 +132,43 @@ def merge_dSYM_slices(config, output_dir, build_dirs, gn_target_name):
     modify_the_version_number(output_dir)
 
 
-def merge_static_library(output_dir, build_dirs, extra_libs):
+def find_file_path(dir_path, target_file_name):
+    dirs_list = []
+    dirs_list.append(dir_path)
+    while len(dirs_list) > 0:
+        cur_dir = dirs_list[0]
+        dirs_list = dirs_list[1:]
+        dir_items = os.listdir(cur_dir)
+        for item in dir_items:
+            absolute_path = os.path.join(cur_dir, item)
+            if item == target_file_name:
+                return absolute_path
+            elif isdir(absolute_path):
+                dirs_list.append(absolute_path)
+
+    return ""
+
+
+def merge_static_library(output_dir, build_dirs, target_file_name):
     print('Merge static libs.')
 
     output_files = []
     for (_, build_dir) in build_dirs.items():
-        static_webrtc_lib_path = os.path.join(build_dir, "obj", "libwebrtc.a")
-        output_files.append(static_webrtc_lib_path)
+        static_lib_path = find_file_path(os.path.join(build_dir, "obj"), target_file_name)
+        output_files.append(static_lib_path)
     print("")
     
     return output_files
 
 
-def create_fat_static_library(output_dir, output_files):
+def create_fat_static_library(output_dir, output_files, target_file_name):
     print("Create a FAT libwebrtc static library.")
     cmd = [
         'xcodebuild', '-find-executable', 'lipo'
     ]
     lipo_path = subprocess.check_output(cmd).strip().decode('utf-8')
 
-    output_file = os.path.join(output_dir, "libwebrtc.a")
+    output_file = os.path.join(output_dir, target_file_name)
     cmd = [lipo_path] + output_files + ['-create', '-output'] + [output_file]
     cmd_str = " ".join(cmd)
     run_cmd(cmd_str)
@@ -177,6 +195,12 @@ def pack_ios(config):
         merge_dSYM_slices(config, output_dir, build_dirs, gn_target_name)
         print("")
 
+    gn_target_names = ["webrtc", "crash_catch_system"]
+    for arch in archs:
+        for target_name in gn_target_names:
+            build_target(config, arch, target_name)
+            print("")
+
     gn_target_name = "webrtc"
     build_dirs = {}
     for arch in archs:
@@ -184,35 +208,16 @@ def pack_ios(config):
         build_dirs[arch] = build_dir
         print("")
 
-    output_files = merge_static_library(output_dir, build_dirs, [])
-
-    create_fat_static_library(output_dir, output_files)
-
-
-extra_mac_static_libs = [
-    'libvideo_objc.a',
-    'libvideosource_objc.a',
-    'libnative_video.a',
-    'libvideocodec_objc.a',
-    'libvideoframebuffer_objc.a',
-    'libmediasource_objc.a',
-    'libmediaconstraints_objc.a',
-    'libmedia_constraints.a',
-    'libbase_native_additions_objc.a',
-    'libwrapped_native_codec_objc.a',
-    'libhelpers_objc.a',
-    'libbase_objc.a',
-    'libvideocapture_objc.a',
-    'libnative_api.a',
-    'libui_objc.a',
-    'libmac_capture_n_render.a',
-]
+    target_files = ["libwebrtc.a", "libbreakpad_client.a"]
+    for target_file in target_files:
+        output_files = merge_static_library(output_dir, build_dirs, target_file)
+        create_fat_static_library(output_dir, output_files, target_file)
 
 
 def pack_mac(config):
     output_dir = os.path.join(os.path.abspath("."), "build", config.target_os, config.build_type)
     archs = target_archs.get(config.target_os)
-    gn_target_names = ["webrtc", "mac_framework_objc"]
+    gn_target_names = ["webrtc", "mac_framework_objc", "crash_catch_system"]
     build_dirs = {}
     for arch in archs:
         build_dir = None
@@ -241,9 +246,11 @@ def pack_mac(config):
         build_dirs[arch] = build_dir
         print("")
 
-    output_files = merge_static_library(output_dir, build_dirs, extra_mac_static_libs)
+    target_files = ["libwebrtc.a", "libbreakpad_client.a"]
 
-    create_fat_static_library(output_dir, output_files)
+    for target_file in target_files:
+        output_files = merge_static_library(output_dir, build_dirs, target_file)
+        create_fat_static_library(output_dir, output_files, target_file)
 
 
 def pack_android(config):
