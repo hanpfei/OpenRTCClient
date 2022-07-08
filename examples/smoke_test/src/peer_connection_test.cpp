@@ -34,11 +34,7 @@
 #endif
 
 #if WEBRTC_ENABLE_PROTOBUF
-#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
-#else
 #include "modules/audio_coding/audio_network_adaptor/config.pb.h"
-#endif
 #endif
 
 static const char kAudioLabel[] = "audio_label";

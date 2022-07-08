@@ -3,48 +3,32 @@ import("//webrtc.gni")
 group("examples") {
   # This target shall build all targets in examples.
   testonly = true
+  visibility = [ "*" ]
   deps = []
 
+  if (is_linux || is_win || is_mac || is_android) {
+    deps += [
+      ":smoke_test",
+    ]
+  }
   if (is_linux || is_win) {
     deps += [
       ":loop_connect",
-      ":smoke_test",
     ]
   }
 }
 
-if (is_linux || is_win || is_mac) {
-  rtc_executable("smoke_test") {
-    visibility = [ "//*", ":*" ]
+if (is_linux || is_win || is_mac || is_android) {
+  rtc_source_set("test_cases") {
     testonly = true
-
+    visibility = [ "*" ]
+    test_base_path = "."
     sources = [
-      "smoke_test/src/media_test_utils/audio_utils.cpp",
-      "smoke_test/src/media_test_utils/audio_utils.h",
-      "smoke_test/src/media_test_utils/byte_stream_utils.cpp",
-      "smoke_test/src/media_test_utils/byte_stream_utils.h",
-      "smoke_test/src/media_test_utils/conn_utils.cpp",
-      "smoke_test/src/media_test_utils/conn_utils.h",
-      "smoke_test/src/media_test_utils/test_video_capturer.cc",
-      "smoke_test/src/media_test_utils/test_video_capturer.h",
-      "smoke_test/src/media_test_utils/vcm_capturer.cc",
-      "smoke_test/src/media_test_utils/vcm_capturer.h",
-      "smoke_test/src/media_test_utils/video_frame_file_writer_bmp.cpp",
-      "smoke_test/src/media_test_utils/video_frame_file_writer_bmp.h",
+      "$test_base_path/smoke_test/src/camera_capture_test.cpp",
+      "$test_base_path/smoke_test/src/crash_catch_test.cpp",
+      "$test_base_path/smoke_test/src/peer_connection_test.cpp",
+      "$test_base_path/smoke_test/src/video_codec_test.cpp",
     ]
-
-    sources += [
-      "smoke_test/src/camera_capture_test.cpp",
-      "smoke_test/src/crash_catch_test.cpp",
-      "smoke_test/src/peer_connection_test.cpp",
-      "smoke_test/src/video_codec_test.cpp",
-    ]
-
-    sources += [
-      "smoke_test/src/main.cpp",
-    ]
-
-    defines = [ "BUILD_ROOT=\"${root_out_dir}\"" ]
 
     if (is_mac) {
       configs += [
@@ -52,16 +36,140 @@ if (is_linux || is_win || is_mac) {
       ]
     }
 
-    public_deps = [
-      "//third_party/googletest:gtest",
+    include_dirs = [
+      "${test_base_path}",
+      "${test_base_path}/smoke_test/src",
     ]
 
-    deps = [
-      "//:webrtc",
-      "//test:video_test_common",
+    defines = [ "BUILD_ROOT=\"${root_out_dir}\"" ]
+
+    if (is_android) {
+      defines += [ "WEBRTC_ANDROID_PLATFORM_BUILD=1" ]
+    }
+
+    public_deps = [
+      "//third_party/googletest:gtest",
       "//third_party/protobuf:protobuf_lite",
       "//third_party/breakpad:breakpad_client_lib",
     ]
+  }
+
+  rtc_static_library("media_test_static") {
+    testonly = true
+    visibility = [ "*" ]
+
+    test_base_path = "./smoke_test/src"
+
+    include_dirs = [
+      "${test_base_path}",
+      "${test_base_path}/smoke_test/src",
+    ]
+
+    sources = [
+      "$test_base_path/media_test_utils/audio_utils.cpp",
+      "$test_base_path/media_test_utils/audio_utils.h",
+      "$test_base_path/media_test_utils/byte_stream_utils.cpp",
+      "$test_base_path/media_test_utils/byte_stream_utils.h",
+      "$test_base_path/media_test_utils/conn_utils.cpp",
+      "$test_base_path/media_test_utils/conn_utils.h",
+      "$test_base_path/media_test_utils/test_video_capturer.cc",
+      "$test_base_path/media_test_utils/test_video_capturer.h",
+      "$test_base_path/media_test_utils/vcm_capturer.cc",
+      "$test_base_path/media_test_utils/vcm_capturer.h",
+      "$test_base_path/media_test_utils/video_frame_file_writer_bmp.cpp",
+      "$test_base_path/media_test_utils/video_frame_file_writer_bmp.h",
+    ]
+
+    deps = [
+      "//:webrtc_lib",
+      "//test:video_test_common",
+      "//third_party/protobuf:protobuf_lite",
+    ]
+
+    absl_deps = [
+      "//third_party/abseil-cpp/absl/algorithm:container",
+      "//third_party/abseil-cpp/absl/strings",
+    ]
+  }
+  if (is_android) {
+    import("//build/config/android/config.gni")
+    import("//build/config/android/rules.gni")
+
+    rtc_shared_library("smoke_test") {
+      testonly = true
+
+      output_name = "libopen_rtc_instrumentation"
+
+      visibility = [ "*" ]
+
+      include_dirs = [
+        ".",
+        "smoke_test/src",
+        "$target_gen_dir"
+      ]
+
+      #test_base_path = "."
+      sources = [
+        "../webrtc/sdk/android/src/jni/jni_onload.cc",
+      ]
+
+      ldflags = [
+        "-Wl,--version-script=" + rebase_path("//build/android/android_only_jni_exports.lst")
+      ]
+
+      public_deps = [
+        "//third_party/googletest:gtest",
+        ":media_test_static",
+        ":test_cases"
+      ]
+    }
+  } else {
+    rtc_executable("smoke_test") {
+      testonly = true
+      visibility = [ "*" ]
+      test_base_path = "."
+
+      include_dirs = [
+        "${test_base_path}",
+        "${test_base_path}/smoke_test/src",
+      ]
+
+      if (is_mac) {
+        sources = [
+          "$test_base_path/smoke_test/src/main.mm",
+        ]
+      } else {
+        sources = [
+          "$test_base_path/smoke_test/src/main.cpp",
+        ]
+      }
+      deps = [
+        "//third_party/googletest:gtest",
+        ":media_test_static",
+        ":test_cases"
+      ]
+
+      if (is_mac) {
+        frameworks = [
+          "Foundation.framework",
+          "AVFoundation.framework",
+          "CoreMedia.framework",
+          "ApplicationServices.framework",
+          "AudioToolbox.framework",
+          "CoreAudio.framework",
+          "CoreGraphics.framework",
+          "VideoToolbox.framework",
+          "CoreVideo.framework",
+          "CoreFoundation.framework",
+          "OpenGL.framework",
+          "QuartzCore.framework",
+          "Cocoa.framework",
+          "Metal.framework",
+          "MetalKit.framework",
+          "AppKit.framework",
+        ]
+      }
+    }
   }
 
   rtc_executable("loop_connect") {

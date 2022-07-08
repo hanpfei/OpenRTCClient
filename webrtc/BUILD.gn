@@ -439,11 +439,19 @@ if (!build_with_chromium) {
       "//:webrtc_lib_link_test",
       "*:*",
     ]
-
-    sources = []
-    complete_static_lib = true
     suppressed_configs += [ "//build/config/compiler:thin_archive" ]
-    defines = []
+
+    complete_static_lib = true
+    deps = [ ":webrtc_lib" ]
+  }
+
+  rtc_static_library("webrtc_lib") {
+    # Only the root target and the test should depend on this.
+    visibility = [
+      "//:default",
+      "//:webrtc_lib_link_test",
+      "*:*",
+    ]
 
     deps = [
       "api:create_peerconnection_factory",
@@ -531,71 +539,12 @@ if (!build_with_chromium) {
       "*:*",
     ]
 
-    sources = []
     complete_static_lib = true
     suppressed_configs += [ "//build/config/compiler:thin_archive" ]
-    defines = []
-
     deps = [
-      "api:create_peerconnection_factory",
-      "api:libjingle_peerconnection_api",
-      "api:rtc_error",
-      "api:transport_api",
-      "api/crypto",
-      "api/rtc_event_log:rtc_event_log_factory",
-      "api/task_queue",
-      "api/task_queue:default_task_queue_factory",
-      "audio",
-      "call",
-      "common_audio",
-      "common_video",
-      "logging:rtc_event_log_api",
-      "media",
-      "modules",
-      "modules/video_capture:video_capture_internal_impl",
-      "p2p:rtc_p2p",
-      "pc:libjingle_peerconnection",
-      "pc:peerconnection",
-      "pc:rtc_pc",
-      "pc:rtc_pc_base",
-      "rtc_base",
-      "sdk",
-      "video",
+      ":webrtc_lib",
+      "//third_party/breakpad:breakpad_client_lib", 
     ]
-
-    if (rtc_include_builtin_audio_codecs) {
-      deps += [
-        "api/audio_codecs:builtin_audio_decoder_factory",
-        "api/audio_codecs:builtin_audio_encoder_factory",
-      ]
-    }
-
-    if (rtc_include_builtin_video_codecs) {
-      deps += [
-        "api/video_codecs:builtin_video_decoder_factory",
-        "api/video_codecs:builtin_video_encoder_factory",
-      ]
-    }
-
-    if (build_with_mozilla) {
-      deps += [
-        "api/video:video_frame",
-        "api/video:video_rtp_headers",
-      ]
-    } else {
-      deps += [
-        "api",
-        "logging",
-        "p2p",
-        "pc",
-        "stats",
-      ]
-    }
-
-    if (rtc_enable_protobuf) {
-      deps += [ "logging:rtc_event_log_proto" ]
-    }
-    deps += [ "//third_party/breakpad:breakpad_client_lib", ]
   }
 }
 
