@@ -60,7 +60,7 @@ if (is_linux || is_win || is_mac) {
       "//:webrtc",
       "//test:video_test_common",
       "//third_party/protobuf:protobuf_lite",
-      "//third_party/breakpad:breakpad_client",
+      "//third_party/breakpad:breakpad_client_lib",
     ]
   }
 

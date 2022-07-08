@@ -8,8 +8,8 @@
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_encoder.h"
-#include "media_test_utils/test_base.h"
 #include "media/base/media_constants.h"
+#include "media_test_utils/test_base.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "pc/test/frame_generator_capturer_video_track_source.h"
@@ -330,6 +330,7 @@ TEST_F(VideoCodecTest, h264_decode) {
 
   webrtc::VideoEncoder::Capabilities capabilities(false);
   webrtc::VideoEncoder::Settings settings(capabilities, 4, 1035);
+
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             h264_encoder->InitEncode(&video_codec, settings));
 

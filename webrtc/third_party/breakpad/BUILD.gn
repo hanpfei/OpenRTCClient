@@ -12,82 +12,6 @@ if (is_win) {
   import("//build/config/win/visual_studio_version.gni")
 }
 
-group("crash_catch_system") {
-  deps = []
-  deps += [
-    ":breakpad_client",
-  ]
-  if (!is_win) {
-    deps += [
-      ":microdump_stackwalk",
-      ":minidump_stackwalk",
-      ":minidump_dump",
-    ]
-  }
-
-  if (is_mac || is_ios || is_linux || is_chromeos || is_android) {
-    deps += [
-      ":dump_syms",
-      ":symupload",
-    ]
-  }
-
-  if (is_mac) {
-    deps += [
-      ":crash_inspector",
-      ":crash_report_sender",
-    ]
-  }
-
-  if (is_linux || is_chromeos || is_android) {
-    deps += [
-      ":minidump-2-core",
-      ":core-2-minidump",
-    ]
-  }
-  if (is_win && (current_toolchain == host_toolchain ||
-                 current_toolchain == symupload_toolchain)) {
-    deps += [
-      ":dump_syms",
-      ":symupload",
-      ":symupload_win",
-      ":google_converter",
-    ]
-  }
-}
-
-rtc_static_library("breakpad_client") {
-  visibility = [
-    "*:*",
-  ]
-  sources = [
-    "breakpad/src/client/crash_handler.cc",
-    "breakpad/src/client/crash_handler.h"
-  ]
-  complete_static_lib = true
-
-  configs += [ ":internal_config" ]
-
-  public_deps = []
-  if (is_mac) {
-    public_deps += [
-      ":breakpad",
-    ]
-  } else if (is_ios) {
-    public_deps += [
-      ":client",
-    ]
-  } else if (is_linux || is_android) {
-    public_deps += [
-      ":client",
-    ]
-  } else if (is_win) {
-    public_deps += [
-      ":breakpad_handler",
-    ]
-  }
-}
-
 config("tools_config") {
   include_dirs = [
     "breakpad/src",
@@ -151,6 +75,85 @@ if (use_fuzzing_engine) {
   default_breakpad_configs += [ ":fuzzing_logging_severity_config" ]
 } else {
   default_breakpad_configs += [ ":default_logging_severity_config" ]
+}
+
+group("crash_catch_system") {
+  deps = []
+  deps += [
+    ":breakpad_client",
+  ]
+  if (!is_win) {
+    deps += [
+      ":microdump_stackwalk",
+      ":minidump_stackwalk",
+      ":minidump_dump",
+    ]
+  }
+
+  if (is_mac || is_ios || is_linux || is_chromeos || is_android) {
+    deps += [
+      ":dump_syms",
+      ":symupload",
+    ]
+  }
+
+  if (is_mac) {
+    deps += [
+      ":crash_inspector",
+      ":crash_report_sender",
+    ]
+  }
+
+  if (is_linux || is_chromeos || is_android) {
+    deps += [
+      ":minidump-2-core",
+      ":core-2-minidump",
+    ]
+  }
+  if (is_win && (current_toolchain == host_toolchain ||
+                 current_toolchain == symupload_toolchain)) {
+    deps += [
+      ":dump_syms",
+      ":symupload",
+      ":symupload_win",
+      ":google_converter",
+    ]
+  }
+}
+
+rtc_static_library("breakpad_client") {
+  configs += [ ":handler_config" ]
+  complete_static_lib = true
+  public_deps = [ ":breakpad_client_lib" ]
+}
+
+rtc_static_library("breakpad_client_lib") {
+  visibility = [
+    "*:*",
+  ]
+  sources = [
+    "breakpad/src/client/crash_handler.cc",
+    "breakpad/src/client/crash_handler.h",
+  ]
+  configs += [ ":handler_config" ]
+  public_deps = []
+  if (is_mac) {
+    public_deps += [
+      ":breakpad",
+    ]
+  } else if (is_ios) {
+    public_deps += [
+      ":client",
+    ]
+  } else if (is_linux || is_android) {
+    public_deps += [
+      ":client",
+    ]
+  } else if (is_win) {
+    public_deps += [
+      ":breakpad_handler",
+    ]
+  }
 }
 
 # {micro,mini}dump_stackwalk and minidump_dump are tool-type executables
@@ -546,7 +549,7 @@ if (is_mac) {
     configs += [ ":internal_config" ]
     public_configs = [ ":breakpad_config" ]
 
-    defines = [ "USE_PROTECTED_ALLOCATIONS=1" ]
+    defines = [ "WEBRTC_MAC=1" ]
     include_dirs = [ "breakpad/src/client/apple/Framework" ]
 
     # TODO(crbug.com/841631): Breakpad uses bootstrap_subset() and
@@ -739,6 +742,8 @@ if (is_linux || is_chromeos || is_android) {
       # linux_syscall_support.h:sys_clone()'s inline assembly.
       cflags = [ "-marm" ]
     }
+
+    defines = [ "WEBRTC_LINUX=1" ]
 
     libs = [ "dl" ]
 
@@ -934,6 +939,7 @@ if (is_win) {
         "$visual_studio_path/DIA SDK/include",
         "breakpad/src",
       ]
+
       sources = [
         "breakpad/src/common/windows/dia_util.cc",
         "breakpad/src/common/windows/dia_util.h",
@@ -1163,6 +1169,8 @@ if (is_ios) {
       "breakpad/src/common/mac",
     ]
 
+    defines = [ "WEBRTC_IOS=1" ]
+
     public_configs = [ ":client_config" ]
 
     if (is_clang) {
@@ -1190,7 +1198,7 @@ if (is_win) {
       public_configs = [ ":handler_config" ]
     }
 
-    defines = [ "BREAKPAD_NO_TERMINATE_THREAD" ]
+    defines = [ "BREAKPAD_NO_TERMINATE_THREAD", "WEBRTC_WIN=1" ]
 
     sources = [
       "breakpad/src/client/windows/crash_generation/client_info.cc",

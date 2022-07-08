@@ -772,13 +772,12 @@ std::vector<AudioCodec> WebRtcVoiceEngine::CollectCodecs(
         dtmf->second = true;
       }
 
-      out.push_back(codec);
-
       if (codec.name == kOpusCodecName && audio_red_for_opus_enabled_) {
         std::string redFmtp =
             rtc::ToString(codec.id) + "/" + rtc::ToString(codec.id);
         map_format({kRedCodecName, 48000, 2, {{"", redFmtp}}}, &out);
       }
+      out.push_back(codec);
     }
   }
 

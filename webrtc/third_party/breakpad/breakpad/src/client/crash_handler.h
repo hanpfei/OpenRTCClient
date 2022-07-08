@@ -36,4 +36,4 @@ void InstallCrashHandler(const std::string& dump_path,
 
 void UnInstallCrashHandler();
 
-}  // namespace sszrtc
+}  // namespace open_rtc

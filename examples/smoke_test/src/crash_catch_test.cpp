@@ -1,4 +1,6 @@
 
+#include <codecvt>
+
 #include "media_test_utils/test_base.h"
 #if defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID)
 #include "third_party/breakpad/breakpad/src/client/linux/handler/exception_handler.h"
@@ -49,9 +51,28 @@ static void crashfunc() {
 }
 
 TEST_F(CrashCatchTest, DISABLED_crash_catch_common) {
+  printf("Build root %s\n", BUILD_ROOT);
+#if defined(WEBRTC_WIN)
+  open_rtc::InstallCrashHandler(BUILD_ROOT + 1, nullptr, minidumpCallback,
+                                nullptr);
+#else
   open_rtc::InstallCrashHandler(BUILD_ROOT, nullptr, minidumpCallback, nullptr);
+#endif
   crashfunc();
+
+  open_rtc::UnInstallCrashHandler();
 }
+
+#if defined(WEBRTC_WIN)
+std::wstring stringToWstring(const std::string& t_str) {
+  // setup converter
+  typedef std::codecvt_utf8<wchar_t> convert_type;
+  std::wstring_convert<convert_type, wchar_t> converter;
+
+  // use converter (.to_bytes: wstr->str, .from_bytes: str->wstr)
+  return converter.from_bytes(t_str);
+}
+#endif
 
 TEST_F(CrashCatchTest, DISABLED_crash_catch) {
 #if defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID)
@@ -59,9 +80,18 @@ TEST_F(CrashCatchTest, DISABLED_crash_catch) {
   google_breakpad::ExceptionHandler eh(descriptor, NULL, MinidumpCallback, NULL,
                                        true, -1);
 #elif defined(WEBRTC_MAC)
-  printf("Build root %s\n", BUILD_ROOT);
   google_breakpad::ExceptionHandler eh(BUILD_ROOT, NULL, MinidumpCallback, NULL,
                                        true, nullptr);
+#elif defined(WEBRTC_WIN)
+  std::wstring dump_path = stringToWstring(".");
+
+  auto handler_ptr = std::make_unique<google_breakpad::ExceptionHandler>(
+      dump_path,
+      nullptr,  // FilterCallback filter,
+      nullptr,  // MinidumpCallback callback,
+      nullptr,  // void* callback_context,
+      google_breakpad::ExceptionHandler::HANDLER_ALL  // int handler_types,
+  );
 #endif
   crashfunc();
 }
