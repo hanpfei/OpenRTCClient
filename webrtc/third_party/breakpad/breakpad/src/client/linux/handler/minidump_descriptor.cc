@@ -68,6 +68,8 @@ MinidumpDescriptor& MinidumpDescriptor::operator=(
   if (c_path_) {
     // This descriptor already had a path set, so generate a new one.
     c_path_ = NULL;
+  }
+  if (mode_ == kWriteMinidumpToFile && !directory_.empty()) {
     UpdatePath();
   }
   size_limit_ = descriptor.size_limit_;

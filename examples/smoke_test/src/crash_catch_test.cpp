@@ -30,11 +30,10 @@ bool MinidumpCallback(const char* dump_dir,
 }
 #endif
 
-bool minidumpCallback(const char* dump_dir,
-                      const char* minidump_id,
-                      void* context,
-                      bool succeeded) {
-  printf("Dump path: %s, minidump_id %s\n", dump_dir, minidump_id);
+bool minidumpCallbackGeneral(const char* dump_file_path,
+                             void* context,
+                            bool succeeded) {
+  printf("Dump file path: %s\n", dump_file_path);
   return succeeded;
 }
 
@@ -50,17 +49,19 @@ static void crashfunc() {
   *a = 1;
 }
 
-TEST_F(CrashCatchTest, DISABLED_crash_catch_common) {
-  printf("Build root %s\n", BUILD_ROOT);
-#if defined(WEBRTC_WIN)
-  open_rtc::InstallCrashHandler(BUILD_ROOT + 1, nullptr, minidumpCallback,
-                                nullptr);
-#else
-  open_rtc::InstallCrashHandler(BUILD_ROOT, nullptr, minidumpCallback, nullptr);
-#endif
-  crashfunc();
-
+#if defined(WEBRTC_POSIX)
+__attribute__((destructor)) static void UninitializeCrashHandler(void) {
   open_rtc::UnInstallCrashHandler();
+}
+#endif
+
+TEST_F(CrashCatchTest, DISABLED_crash_catch_common) {
+  open_rtc::UnInstallCrashHandler();
+  printf("Build root %s\n", BUILD_ROOT);
+  open_rtc::InstallCrashHandler();
+
+  open_rtc::ConfigCrashDumpPath(BUILD_ROOT, minidumpCallbackGeneral, nullptr);
+  crashfunc();
 }
 
 #if defined(WEBRTC_WIN)

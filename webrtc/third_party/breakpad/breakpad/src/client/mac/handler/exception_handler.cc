@@ -239,7 +239,10 @@ ExceptionHandler::ExceptionHandler(const string& dump_path,
       last_minidump_write_result_(false),
       use_minidump_write_mutex_(false) {
   // This will update to the ID and C-string pointers
-  set_dump_path(dump_path);
+  if (!dump_path.empty()) {
+    set_dump_path(dump_path);
+  }
+
   MinidumpGenerator::GatherSystemInformation();
 #if !TARGET_OS_IPHONE
   if (port_name)
@@ -679,12 +682,22 @@ bool ExceptionHandler::InstallHandler() {
                                                   previous_->ports,
                                                   previous_->behaviors,
                                                   previous_->flavors);
+  bool beingDebugged = false;
+  for(size_t i = 0; i < previous_->count; ++i){
+    if(previous_->ports[i] != 0 || previous_->flavors[i] == THREAD_STATE_NONE) {
+      printf("Being debugged at %u\n", previous_->ports[i]);
+      beingDebugged = true;
+    }
+  }
 
-  // Setup the exception ports on this task
-  if (result == KERN_SUCCESS)
+  if (!beingDebugged && result == KERN_SUCCESS) {
+    // Setup the exception ports on this task
     result = task_set_exception_ports(current_task, s_exception_mask,
                                       handler_port_, EXCEPTION_DEFAULT,
                                       THREAD_STATE_NONE);
+  } else {
+    result = KERN_FAILURE;
+  }
 
   installed_exception_handler_ = (result == KERN_SUCCESS);
 

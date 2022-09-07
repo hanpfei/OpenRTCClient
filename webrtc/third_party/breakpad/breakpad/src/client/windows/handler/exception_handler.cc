@@ -243,7 +243,9 @@ void ExceptionHandler::Initialize(
 
     // set_dump_path calls UpdateNextID.  This sets up all of the path and id
     // strings, and their equivalent c_str pointers.
-    set_dump_path(dump_path);
+    if (!dump_path.empty()) {
+      set_dump_path(dump_path);
+    }
   }
 
   // Reserve one element for the instruction memory

@@ -48,6 +48,7 @@ if (is_linux || is_win || is_mac || is_android) {
     }
 
     public_deps = [
+      "//:webrtc_lib",
       "//third_party/googletest:gtest",
       "//third_party/protobuf:protobuf_lite",
       "//third_party/breakpad:breakpad_client_lib",

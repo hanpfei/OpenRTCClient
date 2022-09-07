@@ -66,7 +66,6 @@ class MinidumpDescriptor {
         address_within_principal_mapping_(0),
         skip_dump_if_principal_mapping_not_referenced_(false),
         sanitize_stacks_(false) {
-    assert(!directory.empty());
   }
 
   explicit MinidumpDescriptor(int fd)

@@ -231,8 +231,10 @@ ExceptionHandler::ExceptionHandler(const MinidumpDescriptor& descriptor,
     crash_generation_client_.reset(CrashGenerationClient::TryCreate(server_fd));
 
   if (!IsOutOfProcess() && !minidump_descriptor_.IsFD() &&
-      !minidump_descriptor_.IsMicrodumpOnConsole())
+      !minidump_descriptor_.IsMicrodumpOnConsole() &&
+      !minidump_descriptor_.directory().empty()) {
     minidump_descriptor_.UpdatePath();
+  }
 
 #if defined(__ANDROID__)
   if (minidump_descriptor_.IsMicrodumpOnConsole())
@@ -628,6 +630,9 @@ bool ExceptionHandler::DoDump(pid_t crashing_process, const void* context,
                                           principal_mapping_address,
                                           sanitize_stacks);
   }
+  if (minidump_descriptor_.directory().empty()) {
+    return false;
+  }
   return google_breakpad::WriteMinidump(minidump_descriptor_.path(),
                                         minidump_descriptor_.size_limit(),
                                         crashing_process,
@@ -644,6 +649,9 @@ bool ExceptionHandler::DoDump(pid_t crashing_process, const void* context,
 bool ExceptionHandler::WriteMinidump(const string& dump_path,
                                      MinidumpCallback callback,
                                      void* callback_context) {
+  if (dump_path.empty()) {
+    return false;
+  }
   MinidumpDescriptor descriptor(dump_path);
   ExceptionHandler eh(descriptor, NULL, callback, callback_context, false, -1);
   return eh.WriteMinidump();
@@ -779,6 +787,9 @@ bool ExceptionHandler::WriteMinidumpForChild(pid_t child,
                                              const string& dump_path,
                                              MinidumpCallback callback,
                                              void* callback_context) {
+  if (dump_path.empty()) {
+    return false;
+  }
   // This function is not run in a compromised context.
   MinidumpDescriptor descriptor(dump_path);
   descriptor.UpdatePath();
