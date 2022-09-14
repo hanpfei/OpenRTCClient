@@ -351,7 +351,7 @@ TEST_F(WebrtcPeerConnectionTest, peerconnection_connect) {
   conn_observer_recv->SetPeerConnection(peer_connection_send);
   connection_observer->SetPeerConnection(peer_connection_recv);
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(100079));
+  std::this_thread::sleep_for(std::chrono::milliseconds(10079));
 
   thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
     peer_connection_send->RemoveTrack(audio_sender);
@@ -577,7 +577,7 @@ TEST_F(WebrtcPeerConnectionTest, peerconnection_connect_enable_nack) {
   conn_observer_recv->SetPeerConnection(peer_connection_send);
   connection_observer->SetPeerConnection(peer_connection_recv);
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(100079));
+  std::this_thread::sleep_for(std::chrono::milliseconds(10079));
 
   thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
     peer_connection_send->RemoveTrack(audio_sender);
