@@ -48,11 +48,15 @@ if (is_linux || is_win || is_mac || is_android) {
     }
 
     public_deps = [
-      "//:webrtc_lib",
       "//third_party/googletest:gtest",
       "//third_party/protobuf:protobuf_lite",
       "//third_party/breakpad:breakpad_client_lib",
     ]
+    if (is_win) {
+      public_deps += [ "//:webrtc" ]
+    } else {
+      public_deps += [ "//:webrtc_lib" ]
+    }
   }
 
   rtc_static_library("media_test_static") {
@@ -82,10 +86,14 @@ if (is_linux || is_win || is_mac || is_android) {
     ]
 
     deps = [
-      "//:webrtc_lib",
       "//test:video_test_common",
       "//third_party/protobuf:protobuf_lite",
     ]
+    if (is_win) {
+      deps += [ "//:webrtc" ]
+    } else {
+      deps += [ "//:webrtc_lib" ]
+    }
 
     absl_deps = [
       "//third_party/abseil-cpp/absl/algorithm:container",
@@ -210,8 +218,8 @@ if (is_linux || is_win || is_mac || is_android) {
       ]
       configs += [ "//build/config/win:windowed" ]
       deps += [
-        "../media:rtc_media_base",
-        "../rtc_base:win32",
+        "../webrtc/media:rtc_media_base",
+        "../webrtc/rtc_base:win32",
       ]
     }
     if (is_linux) {

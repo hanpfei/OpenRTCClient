@@ -9,7 +9,6 @@ def use_clang(config):
         return "true"
 
     if os.environ.get('GYP_MSVS_VERSION', None) != "2019":
-        # if user want to use 2017: I don't recommend him to do so, but why the hell should I stop him to fuck himself?
         return "true"
 
     return "false"

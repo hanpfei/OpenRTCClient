@@ -889,6 +889,7 @@ if (is_android) {
 
 if (is_win) {
   rtc_library("win32") {
+    visibility = [ "*" ]
     sources = [
       "win32.cc",
       "win32.h",

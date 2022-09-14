@@ -30,7 +30,6 @@
 #include "rtc_base/logging.h"
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32_socket_init.h"
-#include "rtc_base/win32_socket_server.h"
 #endif
 
 #if WEBRTC_ENABLE_PROTOBUF
