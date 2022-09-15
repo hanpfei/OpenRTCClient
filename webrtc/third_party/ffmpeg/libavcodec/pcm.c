@@ -49,7 +49,7 @@ static av_cold int pcm_encode_init(AVCodecContext *avctx)
         break
         INIT_ONCE(ALAW,  alaw);
         INIT_ONCE(MULAW, ulaw);
-        INIT_ONCE(VIDC,  vidc);
+        // INIT_ONCE(VIDC,  vidc);
     default:
         break;
     }
@@ -630,5 +630,5 @@ PCM_CODEC  (PCM_U32BE,        AV_SAMPLE_FMT_S32, pcm_u32be,        "PCM unsigned
 PCM_CODEC  (PCM_U32LE,        AV_SAMPLE_FMT_S32, pcm_u32le,        "PCM unsigned 32-bit little-endian");
 PCM_CODEC  (PCM_S64BE,        AV_SAMPLE_FMT_S64, pcm_s64be,        "PCM signed 64-bit big-endian");
 PCM_CODEC  (PCM_S64LE,        AV_SAMPLE_FMT_S64, pcm_s64le,        "PCM signed 64-bit little-endian");
-PCM_CODEC  (PCM_VIDC,         AV_SAMPLE_FMT_S16, pcm_vidc,         "PCM Archimedes VIDC");
-PCM_DECODER(PCM_SGA,          AV_SAMPLE_FMT_U8,  pcm_sga,          "PCM SGA");
+// PCM_CODEC  (PCM_VIDC,         AV_SAMPLE_FMT_S16, pcm_vidc,         "PCM Archimedes VIDC");
+// PCM_DECODER(PCM_SGA,          AV_SAMPLE_FMT_U8,  pcm_sga,          "PCM SGA");
