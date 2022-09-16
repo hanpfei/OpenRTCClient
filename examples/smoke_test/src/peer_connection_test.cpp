@@ -164,6 +164,64 @@ class WebrtcPeerConnectionTest : public testing::Test {
   }
 };
 
+class AudioDeviceModuleGuard {
+public:
+  AudioDeviceModuleGuard(
+      rtc::scoped_refptr<webrtc::AudioDeviceModule> adm,
+      std::shared_ptr<rtc::Thread> thread) :
+      adm_(adm), thread_(thread) {
+
+  }
+  ~AudioDeviceModuleGuard() {
+    thread_->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+      adm_ = nullptr;
+      return 0;
+    });
+  }
+
+  rtc::scoped_refptr<webrtc::AudioDeviceModule> adm() {
+    return adm_;
+  }
+private:
+  rtc::scoped_refptr<webrtc::AudioDeviceModule> adm_;
+  std::shared_ptr<rtc::Thread> thread_;
+};
+
+static std::shared_ptr<AudioDeviceModuleGuard> CreateAudioDeviceModuleGuard(
+    std::shared_ptr<rtc::Thread> thread,
+    webrtc::TaskQueueFactory *task_queue_facotry) {
+  std::shared_ptr<AudioDeviceModuleGuard> admGuard;
+  thread->Invoke<int32_t>(RTC_FROM_HERE,
+      [&]() {
+        auto adm = webrtc::AudioDeviceModule::Create(
+            webrtc::AudioDeviceModule::kPlatformDefaultAudio,
+            task_queue_facotry);
+        admGuard = std::make_shared<AudioDeviceModuleGuard>(adm, thread);
+        return 0;
+      });
+  return admGuard;
+}
+
+static rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    std::shared_ptr<rtc::Thread> thread_holder,
+    std::shared_ptr<rtc::Thread> thread,
+    rtc::scoped_refptr<webrtc::AudioDeviceModule> adm) {
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory;
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE,
+      [&]() {
+        peer_connection_factory = webrtc::CreatePeerConnectionFactory(
+            nullptr /* network_thread */, thread.get() /* worker_thread */,
+            nullptr /* signaling_thread */, adm /* default_adm */,
+            webrtc::CreateBuiltinAudioEncoderFactory(),
+            webrtc::CreateBuiltinAudioDecoderFactory(),
+            webrtc::CreateBuiltinVideoEncoderFactory(),
+            webrtc::CreateBuiltinVideoDecoderFactory(),
+            nullptr /* audio_mixer */, nullptr /* audio_processing */);
+        return 0;
+      });
+  return peer_connection_factory;
+}
+
 TEST_F(WebrtcPeerConnectionTest, peerconnection_connect) {
   // rtc::LogMessage::SetLogToStderr(false);
 
@@ -175,31 +233,16 @@ TEST_F(WebrtcPeerConnectionTest, peerconnection_connect) {
   thread_holder->Start();
 
   auto task_queue_facotry = webrtc::CreateDefaultTaskQueueFactory();
-  rtc::scoped_refptr<webrtc::AudioDeviceModule> adm;
 
   std::shared_ptr<rtc::Thread> thread = rtc::Thread::Create();
   thread->Start();
-  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    adm = webrtc::AudioDeviceModule::Create(
-        webrtc::AudioDeviceModule::kPlatformDefaultAudio,
-        task_queue_facotry.get());
-    return 0;
-  });
+
+  auto admGuard = CreateAudioDeviceModuleGuard(thread,
+      task_queue_facotry.get());
 
   /*-------- Create peer connection factory -----------*/
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-      peer_connection_factory;
-  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    peer_connection_factory = webrtc::CreatePeerConnectionFactory(
-        nullptr /* network_thread */, thread.get() /* worker_thread */,
-        nullptr /* signaling_thread */, adm /* default_adm */,
-        webrtc::CreateBuiltinAudioEncoderFactory(),
-        webrtc::CreateBuiltinAudioDecoderFactory(),
-        webrtc::CreateBuiltinVideoEncoderFactory(),
-        webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
-        nullptr /* audio_processing */);
-    return 0;
-  });
+  auto peer_connection_factory = CreatePeerConnectionFactory(thread_holder,
+      thread, admGuard->adm());
   ASSERT_TRUE(peer_connection_factory);
 
   /*-------- Create peer connection -----------*/
@@ -368,10 +411,6 @@ TEST_F(WebrtcPeerConnectionTest, peerconnection_connect) {
   peer_connection_recv = nullptr;
   peer_connection_send = nullptr;
 
-  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    adm = nullptr;
-    return 0;
-  });
   RTC_LOG(LS_INFO) << "End";
 }
 
@@ -401,31 +440,15 @@ TEST_F(WebrtcPeerConnectionTest, peerconnection_connect_enable_nack) {
   thread_holder->Start();
 
   auto task_queue_facotry = webrtc::CreateDefaultTaskQueueFactory();
-  rtc::scoped_refptr<webrtc::AudioDeviceModule> adm;
-
   std::shared_ptr<rtc::Thread> thread = rtc::Thread::Create();
   thread->Start();
-  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    adm = webrtc::AudioDeviceModule::Create(
-        webrtc::AudioDeviceModule::kPlatformDefaultAudio,
-        task_queue_facotry.get());
-    return 0;
-  });
+
+  auto admGuard = CreateAudioDeviceModuleGuard(thread,
+      task_queue_facotry.get());
 
   /*-------- Create peer connection factory -----------*/
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-      peer_connection_factory;
-  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    peer_connection_factory = webrtc::CreatePeerConnectionFactory(
-        nullptr /* network_thread */, thread.get() /* worker_thread */,
-        nullptr /* signaling_thread */, adm /* default_adm */,
-        webrtc::CreateBuiltinAudioEncoderFactory(),
-        webrtc::CreateBuiltinAudioDecoderFactory(),
-        webrtc::CreateBuiltinVideoEncoderFactory(),
-        webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
-        nullptr /* audio_processing */);
-    return 0;
-  });
+  auto peer_connection_factory = CreatePeerConnectionFactory(thread_holder,
+      thread, admGuard->adm());
   ASSERT_TRUE(peer_connection_factory);
 
   /*-------- Create peer connection -----------*/
@@ -594,10 +617,6 @@ TEST_F(WebrtcPeerConnectionTest, peerconnection_connect_enable_nack) {
   peer_connection_recv = nullptr;
   peer_connection_send = nullptr;
 
-  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    adm = nullptr;
-    return 0;
-  });
   RTC_LOG(LS_INFO) << "End";
 }
 
@@ -612,31 +631,16 @@ TEST_F(WebrtcPeerConnectionTest, connection_audio_echo) {
   thread_holder->Start();
 
   auto task_queue_facotry = webrtc::CreateDefaultTaskQueueFactory();
-  rtc::scoped_refptr<webrtc::AudioDeviceModule> adm;
 
   std::shared_ptr<rtc::Thread> thread = rtc::Thread::Create();
   thread->Start();
-  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    adm = webrtc::AudioDeviceModule::Create(
-        webrtc::AudioDeviceModule::kPlatformDefaultAudio,
-        task_queue_facotry.get());
-    return 0;
-  });
+
+  auto admGuard = CreateAudioDeviceModuleGuard(thread,
+      task_queue_facotry.get());
 
   /*-------- Create peer connection factory -----------*/
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-      peer_connection_factory;
-  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    peer_connection_factory = webrtc::CreatePeerConnectionFactory(
-        nullptr /* network_thread */, thread.get() /* worker_thread */,
-        nullptr /* signaling_thread */, adm /* default_adm */,
-        webrtc::CreateBuiltinAudioEncoderFactory(),
-        webrtc::CreateBuiltinAudioDecoderFactory(),
-        webrtc::CreateBuiltinVideoEncoderFactory(),
-        webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
-        nullptr /* audio_processing */);
-    return 0;
-  });
+  auto peer_connection_factory = CreatePeerConnectionFactory(thread_holder,
+      thread, admGuard->adm());
   ASSERT_TRUE(peer_connection_factory);
 
   /*-------- Create peer connection -----------*/
@@ -782,10 +786,6 @@ TEST_F(WebrtcPeerConnectionTest, connection_audio_echo) {
   peer_connection_recv = nullptr;
   peer_connection_send = nullptr;
 
-  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    adm = nullptr;
-    return 0;
-  });
   RTC_LOG(LS_INFO) << "End";
 }
 
@@ -855,31 +855,16 @@ TEST_F(WebrtcPeerConnectionTest, connection_audio_enable_ana) {
   thread_holder->Start();
 
   auto task_queue_facotry = webrtc::CreateDefaultTaskQueueFactory();
-  rtc::scoped_refptr<webrtc::AudioDeviceModule> adm;
 
   std::shared_ptr<rtc::Thread> thread = rtc::Thread::Create();
   thread->Start();
-  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    adm = webrtc::AudioDeviceModule::Create(
-        webrtc::AudioDeviceModule::kPlatformDefaultAudio,
-        task_queue_facotry.get());
-    return 0;
-  });
+
+  auto admGuard = CreateAudioDeviceModuleGuard(thread,
+      task_queue_facotry.get());
 
   /*-------- Create peer connection factory -----------*/
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-      peer_connection_factory;
-  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    peer_connection_factory = webrtc::CreatePeerConnectionFactory(
-        nullptr /* network_thread */, thread.get() /* worker_thread */,
-        nullptr /* signaling_thread */, adm /* default_adm */,
-        webrtc::CreateBuiltinAudioEncoderFactory(),
-        webrtc::CreateBuiltinAudioDecoderFactory(),
-        webrtc::CreateBuiltinVideoEncoderFactory(),
-        webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
-        nullptr /* audio_processing */);
-    return 0;
-  });
+  auto peer_connection_factory = CreatePeerConnectionFactory(thread_holder,
+      thread, admGuard->adm());
   ASSERT_TRUE(peer_connection_factory);
 
   /*-------- Create peer connection -----------*/
@@ -1039,9 +1024,5 @@ TEST_F(WebrtcPeerConnectionTest, connection_audio_enable_ana) {
   peer_connection_recv = nullptr;
   peer_connection_send = nullptr;
 
-  thread->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
-    adm = nullptr;
-    return 0;
-  });
   RTC_LOG(LS_INFO) << "End";
 }
