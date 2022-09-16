@@ -18,7 +18,7 @@ typedef bool (*CrashDumpCallback)(const char* dump_file_path,
 
 void InstallCrashHandler();
 
-bool ConfigCrashDumpPath(const std::string& dump_path,
+bool ConfigCrashDumpPath(const char* dump_path,
                          CrashDumpCallback callback,
                          void* callback_context);
 

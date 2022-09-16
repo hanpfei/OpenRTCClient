@@ -268,7 +268,7 @@ void InstallCrashHandler() {
   ++ref_count_;
 }
 
-bool ConfigCrashDumpPath(const std::string& dump_path,
+bool ConfigCrashDumpPath(const char* dump_path,
                          CrashDumpCallback callback,
                          void* callback_context) {
   if (!sLoaded) {
