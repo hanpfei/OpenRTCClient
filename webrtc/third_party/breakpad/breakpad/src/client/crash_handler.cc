@@ -172,10 +172,15 @@ bool CrashHandler::MinidumpCreated(const char* dump_file_path,
     context = crashdump_callback_context_;
   }
 
+  bool result = false;
   if (callback) {
-    callback(dump_file_path, context, succeeded);
+    result = callback(dump_file_path, context, succeeded);
   }
-  return true;
+#if defined(WEBRTC_ANDROID)
+   return false;
+#else
+  return result;
+#endif
 }
 
 #if defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID)
