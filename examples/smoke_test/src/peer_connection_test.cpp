@@ -414,6 +414,180 @@ TEST_F(WebrtcPeerConnectionTest, peerconnection_connect) {
   RTC_LOG(LS_INFO) << "End";
 }
 
+TEST_F(WebrtcPeerConnectionTest, peerconnection_connect_video_only) {
+  // rtc::LogMessage::SetLogToStderr(false);
+
+#if defined(WEBRTC_WIN)
+  rtc::WinsockInitializer winsock_init;
+#endif
+
+  std::shared_ptr<rtc::Thread> thread_holder = rtc::Thread::Create();
+  thread_holder->Start();
+
+  auto task_queue_facotry = webrtc::CreateDefaultTaskQueueFactory();
+
+  std::shared_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+
+  auto admGuard = CreateAudioDeviceModuleGuard(thread,
+      task_queue_facotry.get());
+
+  /*-------- Create peer connection factory -----------*/
+  auto peer_connection_factory = CreatePeerConnectionFactory(thread_holder,
+      thread, admGuard->adm());
+  ASSERT_TRUE(peer_connection_factory);
+
+  /*-------- Create peer connection -----------*/
+  auto connection_observer =
+      std::make_shared<ConnectionObserver>("SendConnection");
+
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_send;
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    peer_connection_send = CreatePeerConnection(
+        /*dtls*/ true, peer_connection_factory, connection_observer);
+    return 0;
+  });
+  ASSERT_TRUE(peer_connection_send);
+
+  /*-------- To create receive peer connection -----------*/
+  auto conn_observer_recv =
+      std::make_shared<ConnectionObserver>("RecvConnection");
+
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_recv;
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    peer_connection_recv = CreatePeerConnection(
+        /*dtls*/ true, peer_connection_factory, conn_observer_recv);
+    return 0;
+  });
+  ASSERT_TRUE(peer_connection_recv);
+
+  /*-------- Create and add media tracks for send connection -----------*/
+  rtc::scoped_refptr<CapturerTrackSource> video_device;
+  rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track;
+  rtc::scoped_refptr<webrtc::RtpSenderInterface> video_sender;
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    video_device = CapturerTrackSource::Create();
+    if (video_device) {
+      video_track =
+          peer_connection_factory->CreateVideoTrack(kVideoLabel, video_device);
+
+      auto result_or_error =
+          peer_connection_send->AddTrack(video_track, {kStreamId});
+      if (!result_or_error.ok()) {
+        RTC_LOG(LS_WARNING) << "Failed to add video track to PeerConnection: "
+            << result_or_error.error().message();
+      }
+      video_sender = result_or_error.value();
+    } else {
+      RTC_LOG(LS_WARNING) << "OpenVideoCaptureDevice failed";
+    }
+    return 0;
+  });
+  ASSERT_TRUE(video_device);
+  ASSERT_TRUE(video_track);
+
+  /*-------- Create offer for send connection -----------*/
+  rtc::Event create_offer_event;
+  rtc::scoped_refptr<
+      CreateSessionDescriptionObserver<webrtc::PeerConnectionInterface>>
+      create_session_desc_observer_sender(
+          new rtc::RefCountedObject<CreateSessionDescriptionObserver<
+              webrtc::PeerConnectionInterface>>(
+              create_offer_event, peer_connection_send,
+              SetSessionDescriptionObserver::Create(
+                  "SendConnection:SetLocalDescription")));
+
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    peer_connection_send->CreateOffer(
+        create_session_desc_observer_sender.get(),
+        webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+    return 0;
+  });
+
+  create_offer_event.Wait(10000);
+
+  /*-------- Set remote description for receive connection --------*/
+  webrtc::SdpParseError error;
+
+  webrtc::SdpType sender_sdp_type =
+      create_session_desc_observer_sender->GetSdpType();
+  std::string sender_sdp = create_session_desc_observer_sender->GetSdpString();
+  std::unique_ptr<webrtc::SessionDescriptionInterface> sender_session_desc =
+      webrtc::CreateSessionDescription(sender_sdp_type, sender_sdp, &error);
+  ASSERT_TRUE(sender_session_desc);
+
+  EXPECT_EQ(sender_sdp_type, webrtc::SdpType::kOffer);
+  RTC_LOG(LS_INFO) << "Sender SDP type " << create_session_desc_observer_sender->GetSdpTypeStr()
+        << " and set remote description for receive connection";
+  //  LOGI("Sender SDP type %s, content %s",
+  //       create_session_desc_observer_sender->GetSdpTypeStr().c_str(),
+  //       sender_sdp.c_str());
+
+  peer_connection_recv->SetRemoteDescription(
+      SetSessionDescriptionObserver::Create(
+          "RecvConnection:SetRemoteDescription"),
+      sender_session_desc.release());
+
+  /*-------- Create answer for receive connection --------*/
+  rtc::Event create_answer_event;
+  rtc::scoped_refptr<
+      CreateSessionDescriptionObserver<webrtc::PeerConnectionInterface>>
+      session_desc_observer_recv(
+          new rtc::RefCountedObject<CreateSessionDescriptionObserver<
+              webrtc::PeerConnectionInterface>>(
+              create_answer_event, peer_connection_recv,
+              SetSessionDescriptionObserver::Create(
+                  "RecvConnection:SetLocalDescription")));
+  peer_connection_recv->CreateAnswer(
+      session_desc_observer_recv.get(),
+      webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+  create_answer_event.Wait(10000);
+
+  /*-------- Set remote description for send connection -----------*/
+  webrtc::SdpType recv_sdp_type = session_desc_observer_recv->GetSdpType();
+  std::string recv_sdp = session_desc_observer_recv->GetSdpString();
+  std::unique_ptr<webrtc::SessionDescriptionInterface> recv_session_desc =
+      webrtc::CreateSessionDescription(recv_sdp_type, recv_sdp, &error);
+
+  EXPECT_EQ(recv_sdp_type, webrtc::SdpType::kAnswer);
+  RTC_LOG(LS_INFO) << "Receiver SDP type " << session_desc_observer_recv->GetSdpTypeStr()
+      << " and set remote description for receive connection";
+  //  LOGI("Receiver SDP type %s, content %s",
+  //      session_desc_observer_recv->GetSdpTypeStr().c_str(),
+  //      recv_sdp.c_str());
+
+  if (!recv_session_desc) {
+    RTC_LOG(LS_INFO) << "Can't parse received session description message. "
+        << "SdpParseError was: %s" << error.description;
+  }
+  ASSERT_TRUE(recv_session_desc);
+
+  peer_connection_send->SetRemoteDescription(
+      SetSessionDescriptionObserver::Create(
+          "SendConnection:SetRemoteDescription"),
+      recv_session_desc.release());
+
+  conn_observer_recv->SetPeerConnection(peer_connection_send);
+  connection_observer->SetPeerConnection(peer_connection_recv);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10079));
+
+  thread_holder->Invoke<int32_t>(RTC_FROM_HERE, [&]() {
+    peer_connection_send->RemoveTrack(video_sender);
+    video_track = nullptr;
+    video_device = nullptr;
+    peer_connection_factory = nullptr;
+    return 0;
+  });
+
+  conn_observer_recv->SetPeerConnection(nullptr);
+  connection_observer->SetPeerConnection(nullptr);
+  peer_connection_recv = nullptr;
+  peer_connection_send = nullptr;
+
+  RTC_LOG(LS_INFO) << "End";
+}
+
 class RecoverFieldTrial {
 public:
   RecoverFieldTrial() :
