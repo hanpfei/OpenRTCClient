@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+from genericpath import isdir
+from shutil import copyfile
+from utils import run_cmd
 import build
 import distutils.dir_util
-from genericpath import isdir
 import os
 import subprocess
-from shutil import copyfile
 import shutil
 import sys
 import tarfile
-from utils import run_cmd
-
+import zipfile
 
 os.environ['PATH'] = '/usr/libexec' + os.pathsep + os.environ['PATH']
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,7 +24,8 @@ target_archs = {
     "ios" : ['arm64', 'x64'],
     "mac" : ['arm64', 'x64'],
     "android" : ['arm64', 'arm', 'x86', 'x64'],
-    "linux" : ['arm64', 'arm', 'x86', 'x64']
+    "linux" : ['arm64', 'arm', 'x86', 'x64'],
+    "win" : ['x64']
 }
 
 
@@ -271,8 +272,40 @@ def pack_mac(config):
         create_fat_static_library(output_dir, output_files, target_file)
 
 
+def generate_package_with_tgz(output_dir, file_name):
+    target_package_file = os.path.join(output_dir, '..', ('%s.tar.gz' % file_name))
+    target_package_file = os.path.abspath(target_package_file)
+    output_dir = os.path.abspath(output_dir)
+
+    if os.path.exists(target_package_file):
+        os.remove(target_package_file)
+
+    with tarfile.open(target_package_file, "w:gz") as tar:
+        tar.add(output_dir, arcname=os.path.basename(output_dir))
+
+    return target_package_file
+
+
+def generate_package_with_zip(output_dir, file_name):
+    target_package_file = os.path.join(output_dir, '..', ('%s.zip' % file_name))
+    target_package_file = os.path.abspath(target_package_file)
+    output_dir = os.path.abspath(output_dir)
+
+    if os.path.exists(target_package_file):
+        os.remove(target_package_file)
+
+    with zipfile.ZipFile(target_package_file, "w", zipfile.ZIP_DEFLATED) as zip:
+        for path, dirnames, filenames in os.walk(output_dir):
+            fpath = path.replace(output_dir, '')
+            for filename in filenames:
+                zip.write(os.path.join(path, filename), os.path.join(fpath, filename))
+
+    return target_package_file
+
+
 def pack_android(config):
     archs = target_archs.get(config.target_os)
+    # gn_target_names = ["webrtc", "webrtc_crash_caught"]
     gn_target_names = ["webrtc"]
     build_dirs = {}
     for arch in archs:
@@ -303,14 +336,18 @@ def pack_android(config):
     webrtc_jar_path = None
 
     for arch, abi in arch2abi.items():
-        build_dir = build_dirs[arch]
-        webrtc_lib_path = os.path.join(build_dir, "obj", "libwebrtc.a")
+        for target_name in gn_target_names:
+            file_name = "lib" + target_name + ".a"
+            build_dir = build_dirs[arch]
+            webrtc_lib_path = os.path.join(build_dir, "obj", file_name)
 
-        target_dir = os.path.join(output_dir, abi)
-        os.mkdir(target_dir)
-        target_file_path = os.path.join(target_dir, "libwebrtc.a")
+            target_dir = os.path.join(output_dir, abi)
+            if not os.path.exists(target_dir):
+                os.mkdir(target_dir)
 
-        copyfile(webrtc_lib_path, target_file_path)
+            target_file_path = os.path.join(target_dir, file_name)
+
+            copyfile(webrtc_lib_path, target_file_path)
 
         if not webrtc_jar_path:
             webrtc_jar_path = os.path.join(build_dir, "lib.java", "sdk", "android", "libwebrtc.jar")
@@ -318,27 +355,24 @@ def pack_android(config):
     target_webrtc_jar_path = os.path.join(output_dir, "libwebrtc.jar")
     copyfile(webrtc_jar_path, target_webrtc_jar_path)
 
+    # Don't copy header files of webrtc now
+    """
     api_dir_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'webrtc', 'api')
     target_header_path = os.path.join(output_dir, "include")
     os.mkdir(target_header_path)
     target_header_path = os.path.join(target_header_path, "api")
 
     distutils.dir_util.copy_tree(api_dir_path, target_header_path)
+    """
 
     manifest_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'webrtc',
                                       'sdk', 'android', 'AndroidManifest.xml')
     target_manifest_file_path = os.path.join(output_dir, os.path.basename(manifest_file_path))
     copyfile(manifest_file_path, target_manifest_file_path)
 
-    target_package_file = os.path.join(output_dir, '..', 'WebRTC_SDK-{}.tar.gz'.format(config.build_type))
+    target_package_file = generate_package_with_zip(output_dir, "webrtc")
 
-    if os.path.exists(target_package_file):
-        os.remove(target_package_file)
-
-    with tarfile.open(target_package_file, "w:gz") as tar:
-        tar.add(output_dir, arcname=os.path.basename(output_dir))
-
-    print("Create android webrtc package completely: ", os.path.abspath(target_package_file))
+    print("Create android webrtc package at: ", os.path.abspath(target_package_file), "completely")
 
 
 def pack_linux(config):
