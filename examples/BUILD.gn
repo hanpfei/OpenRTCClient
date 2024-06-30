@@ -14,6 +14,7 @@ group("examples") {
   if (is_linux || is_win) {
     deps += [
       ":loop_connect",
+      ":media_test",
     ]
   }
 }
@@ -259,5 +260,37 @@ if (is_linux || is_win || is_mac || is_android) {
       "//third_party/abseil-cpp/absl/flags:parse",
       "//third_party/libyuv",
     ]
+  }
+
+  rtc_executable("media_test") {
+    visibility = [ "//*", ":*" ]
+    testonly = true
+    sources = [
+      "media_test/src/main.cpp",
+      "media_test/src/test_case.cpp",
+    ]
+
+    deps = [
+      "//third_party/googletest:gtest",
+    ]
+
+    if (is_win) {
+      sources += [
+      ]
+      configs += []
+      deps += [
+      ]
+    }
+    if (is_linux) {
+      sources += [
+      ]
+      cflags = [ "-Wno-deprecated-declarations" ]
+      libs = [
+        "X11",
+        "Xcomposite",
+        "Xext",
+        "Xrender",
+      ]
+    }
   }
 }
