@@ -114,7 +114,7 @@ RunParameters::RunParameters(int nParams, const CHARTYPE* paramStr[])
         }
         string msg = whatText;
         msg += usage;
-        throw(msg);
+        ST_THROW_RT_ERROR(msg.c_str());;
     }
 
     // Get input & output file names
@@ -191,7 +191,7 @@ void RunParameters::throwIllegalParamExp(const STRING &str) const
     msg += convertString(str);
     msg += "\".\n\n";
     msg += usage;
-    ST_THROW_RT_ERROR(msg);
+    ST_THROW_RT_ERROR(msg.c_str());
 }
 
 void RunParameters::throwLicense() const
@@ -252,15 +252,7 @@ void RunParameters::parseSwitchParam(const STRING& str)
         case 'b' :
             // switch '-bpm=xx'
             detectBPM = true;
-            try
-            {
-                goalBPM = parseSwitchValue(str);
-            }
-            catch (const runtime_error &)
-            {
-                // illegal or missing bpm value => just calculate bpm
-                goalBPM = 0;
-            }
+            goalBPM = parseSwitchValue(str);
             break;
 
         case 'q' :

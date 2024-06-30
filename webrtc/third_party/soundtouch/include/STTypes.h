@@ -173,7 +173,8 @@ namespace soundtouch
 #ifdef ST_NO_EXCEPTION_HANDLING
     // Exceptions disabled. Throw asserts instead if enabled.
     #include <assert.h>
-    #define ST_THROW_RT_ERROR(x)    {assert((const char *)x);}
+    #include <stdio.h>
+    #define ST_THROW_RT_ERROR(x)    {fprintf(stderr, "%s\n", (const char *)x); assert(0);}
 #else
     // use c++ standard exceptions
     #include <stdexcept>

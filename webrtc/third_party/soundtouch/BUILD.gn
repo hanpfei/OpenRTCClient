@@ -1,0 +1,96 @@
+# Copyright 2014 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/arm.gni")
+import("//build/config/sanitizers/sanitizers.gni")
+import("//testing/libfuzzer/fuzzer_test.gni")
+
+config("libsoundtouch_config") {
+  include_dirs = [ "./include" ]
+  defines = [ "ST_NO_EXCEPTION_HANDLING=1" ]
+}
+
+config("libsoundtouch_config_internal") {
+  include_dirs = [ "./source/SoundTouch" ]
+  defines = [
+  ]
+}
+
+set_opt_level = !is_debug && (is_posix || is_fuchsia) &&
+                (current_cpu == "arm" || current_cpu == "arm64")
+
+static_library("libsoundtouch") {
+  visibility = [ "*" ]
+  sources = [
+    "source/SoundTouch/AAFilter.cpp",
+    "source/SoundTouch/AAFilter.h",
+    "source/SoundTouch/BPMDetect.cpp",
+    "source/SoundTouch/cpu_detect.h",
+    "source/SoundTouch/cpu_detect_x86.cpp",
+    "source/SoundTouch/FIFOSampleBuffer.cpp",
+    "source/SoundTouch/FIRFilter.cpp",
+    "source/SoundTouch/FIRFilter.h",
+    "source/SoundTouch/InterpolateCubic.cpp",
+    "source/SoundTouch/InterpolateCubic.h",
+    "source/SoundTouch/InterpolateLinear.cpp",
+    "source/SoundTouch/InterpolateLinear.h",
+    "source/SoundTouch/InterpolateShannon.cpp",
+    "source/SoundTouch/InterpolateShannon.h",
+    "source/SoundTouch/mmx_optimized.cpp",
+    "source/SoundTouch/PeakFinder.cpp",
+    "source/SoundTouch/PeakFinder.h",
+    "source/SoundTouch/RateTransposer.cpp",
+    "source/SoundTouch/RateTransposer.h",
+    "source/SoundTouch/SoundTouch.cpp",
+    "source/SoundTouch/sse_optimized.cpp",
+    "source/SoundTouch/TDStretch.cpp",
+    "source/SoundTouch/TDStretch.h",
+  ]
+
+  configs += [ ":libsoundtouch_config_internal" ]
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+  if (set_opt_level) {
+    configs -= [ "//build/config/compiler:default_optimization" ]
+    configs += [ "//build/config/compiler:optimize_max" ]
+  }
+
+  all_dependent_configs = [ ":libsoundtouch_config" ]
+}
+
+config("libwebp_utils_warnings") {
+  if (is_clang) {
+    # See https://code.google.com/p/webp/issues/detail?id=253.
+    cflags = [  ]
+  }
+}
+
+###############################################################################
+# Executables
+
+if (current_toolchain == host_toolchain) {
+  executable("soundstretch") {
+    sources = [
+      "source/SoundStretch/main.cpp",
+      "source/SoundStretch/RunParameters.cpp",
+      "source/SoundStretch/RunParameters.h",
+      "source/SoundStretch/SS_CharTypes.h",
+      "source/SoundStretch/WavFile.cpp",
+      "source/SoundStretch/WavFile.h",
+    ]
+    configs -= [ "//build/config/compiler:chromium_code" ]
+    configs += [ "//build/config/compiler:no_chromium_code" ]
+    if (set_opt_level) {
+      configs -= [ "//build/config/compiler:default_optimization" ]
+      configs += [ "//build/config/compiler:optimize_max" ]
+    }
+
+    deps = [
+      ":libsoundtouch",
+    ]
+    configs += [ ":libsoundtouch_config" ]
+    configs += [ ":libsoundtouch_config_internal" ]
+    visibility = [ "*:*" ]
+  }
+}

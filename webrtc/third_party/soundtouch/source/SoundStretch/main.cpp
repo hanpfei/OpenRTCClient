@@ -301,21 +301,8 @@ int wmain(int argc, const wchar_t* args[])
 int main(int argc, const char* args[])
 #endif
 {
-    try
-    {
-        soundstretch::printHelloText();
-        soundstretch::RunParameters params(argc, args);
-        soundstretch::ss_main(params);
-    }
-    catch (const runtime_error& e)
-    {
-        fprintf(stderr, "%s\n", e.what());
-        return -1;
-    }
-    catch (const string& e)
-    {
-        fprintf(stderr, "%s\n", e.c_str());
-        return -1;
-    }
+    soundstretch::printHelloText();
+    soundstretch::RunParameters params(argc, args);
+    soundstretch::ss_main(params);
     return 0;
 }

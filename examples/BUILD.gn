@@ -15,6 +15,7 @@ group("examples") {
     deps += [
       ":loop_connect",
       ":media_test",
+      "//third_party/soundtouch:soundstretch",
     ]
   }
 }
