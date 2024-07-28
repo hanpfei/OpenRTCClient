@@ -18,6 +18,12 @@ group("examples") {
       "//third_party/soundtouch:soundstretch",
     ]
   }
+
+  if (is_linux) {
+    deps += [
+      ":pa_exam",
+    ]
+  }
 }
 
 if (is_linux || is_win || is_mac || is_android) {
@@ -292,6 +298,29 @@ if (is_linux || is_win || is_mac || is_android) {
         "Xext",
         "Xrender",
       ]
+    }
+  }
+
+  if (is_linux) {
+    rtc_executable("pa_exam") {
+      visibility = [ "*" ]
+      testonly = true
+
+      sources = [
+        "pa_exam/src/main.cpp",
+        "pa_exam/src/pulseaudio_player.cpp",
+        "pa_exam/src/wav_pcm_file_parser.cpp",
+        "pa_exam/src/wav_pcm_file_parser.h",
+        "pa_exam/src/wav_utils.cpp",
+        "pa_exam/src/wav_utils.h",
+      ]
+
+      configs = []
+
+      deps = [
+        "//third_party/googletest:gtest",
+      ]
+      libs = [ "pulse", "pulse-simple", "m" ]
     }
   }
 }
