@@ -13,6 +13,7 @@ group("examples") {
   }
   if (is_linux || is_win) {
     deps += [
+      ":audio_resample",
       ":loop_connect",
       ":media_test",
       "//third_party/soundtouch:soundstretch",
@@ -322,5 +323,32 @@ if (is_linux || is_win || is_mac || is_android) {
       ]
       libs = [ "pulse", "pulse-simple", "m" ]
     }
+  }
+
+  rtc_executable("audio_resample") {
+    visibility = [ "*" ]
+    testonly = true
+
+    sources = [
+      "audio_resample/src/audio_resample_utils.cpp",
+      "audio_resample/src/audio_resample_utils.h",
+      "audio_resample/src/audio_wav_file_writer.cpp",
+      "audio_resample/src/audio_wav_file_writer.h",
+      "audio_resample/src/main.cpp",
+      "audio_resample/src/wav_pcm_file_parser.cpp",
+      "audio_resample/src/wav_pcm_file_parser.h",
+      "audio_resample/src/wav_utils.cpp",
+      "audio_resample/src/wav_utils.h",
+    ]
+
+    configs = []
+
+    deps = [
+      "//third_party/googletest:gtest",
+      "//api/audio:audio_frame_api",
+      "//audio/utility:audio_frame_operations",
+      "//common_audio:common_audio",
+    ]
+    libs = [ "pulse", "pulse-simple", "m" ]
   }
 }
