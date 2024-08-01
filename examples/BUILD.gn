@@ -22,6 +22,7 @@ group("examples") {
 
   if (is_linux) {
     deps += [
+      ":audio_mix",
       ":pa_exam",
     ]
   }
@@ -310,6 +311,7 @@ if (is_linux || is_win || is_mac || is_android) {
       sources = [
         "pa_exam/src/main.cpp",
         "pa_exam/src/pulseaudio_player.cpp",
+        "pa_exam/src/pulseaudio_player.h",
         "pa_exam/src/wav_pcm_file_parser.cpp",
         "pa_exam/src/wav_pcm_file_parser.h",
         "pa_exam/src/wav_utils.cpp",
@@ -320,6 +322,37 @@ if (is_linux || is_win || is_mac || is_android) {
 
       deps = [
         "//third_party/googletest:gtest",
+      ]
+      libs = [ "pulse", "pulse-simple", "m" ]
+    }
+
+    rtc_executable("audio_mix") {
+      visibility = [ "*" ]
+      testonly = true
+
+      sources = [
+        "audio_mix/src/audio_mixer_source_wav_file.cpp",
+        "audio_mix/src/audio_mixer_source_wav_file.h",
+        "audio_mix/src/audio_resample_utils.cpp",
+        "audio_mix/src/audio_resample_utils.h",
+        "audio_mix/src/main.cpp",
+        "audio_mix/src/pulseaudio_player.cpp",
+        "audio_mix/src/pulseaudio_player.h",
+        "audio_mix/src/wav_pcm_file_parser.cpp",
+        "audio_mix/src/wav_pcm_file_parser.h",
+        "audio_mix/src/wav_utils.cpp",
+        "audio_mix/src/wav_utils.h",
+      ]
+
+      configs = []
+
+      deps = [
+        "//third_party/googletest:gtest",
+        "//api/audio:audio_frame_api",
+        "//audio",
+        "//audio/utility:audio_frame_operations",
+        "//common_audio:common_audio",
+        "//modules/audio_mixer:audio_mixer_impl"
       ]
       libs = [ "pulse", "pulse-simple", "m" ]
     }
@@ -349,6 +382,6 @@ if (is_linux || is_win || is_mac || is_android) {
       "//audio/utility:audio_frame_operations",
       "//common_audio:common_audio",
     ]
-    libs = [ "pulse", "pulse-simple", "m" ]
+    libs = [ ]
   }
 }

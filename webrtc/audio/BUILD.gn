@@ -13,6 +13,7 @@ if (is_android) {
 }
 
 rtc_library("audio") {
+  visibility = [ "*" ]
   sources = [
     "audio_level.cc",
     "audio_level.h",
