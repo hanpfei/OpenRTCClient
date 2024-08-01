@@ -23,7 +23,8 @@ group("examples") {
   if (is_linux) {
     deps += [
       ":audio_mix",
-      ":pa_exam",
+      ":pa_player",
+      ":pa_recorder",
     ]
   }
 }
@@ -304,18 +305,18 @@ if (is_linux || is_win || is_mac || is_android) {
   }
 
   if (is_linux) {
-    rtc_executable("pa_exam") {
+    rtc_executable("pa_player") {
       visibility = [ "*" ]
       testonly = true
 
       sources = [
-        "pa_exam/src/main.cpp",
-        "pa_exam/src/pulseaudio_player.cpp",
-        "pa_exam/src/pulseaudio_player.h",
-        "pa_exam/src/wav_pcm_file_parser.cpp",
-        "pa_exam/src/wav_pcm_file_parser.h",
-        "pa_exam/src/wav_utils.cpp",
-        "pa_exam/src/wav_utils.h",
+        "pa_player/src/main.cpp",
+        "pa_player/src/pulseaudio_player.cpp",
+        "pa_player/src/pulseaudio_player.h",
+        "pa_player/src/wav_pcm_file_parser.cpp",
+        "pa_player/src/wav_pcm_file_parser.h",
+        "pa_player/src/wav_utils.cpp",
+        "pa_player/src/wav_utils.h",
       ]
 
       configs = []
@@ -353,6 +354,28 @@ if (is_linux || is_win || is_mac || is_android) {
         "//audio/utility:audio_frame_operations",
         "//common_audio:common_audio",
         "//modules/audio_mixer:audio_mixer_impl"
+      ]
+      libs = [ "pulse", "pulse-simple", "m" ]
+    }
+
+    rtc_executable("pa_recorder") {
+      visibility = [ "*" ]
+      testonly = true
+
+      sources = [
+        "pa_recorder/src/audio_wav_file_writer.cpp",
+        "pa_recorder/src/audio_wav_file_writer.h",
+        "pa_recorder/src/main.cpp",
+        "pa_recorder/src/pa_recorder.cpp",
+        "pa_recorder/src/pa_recorder.h",
+        "pa_recorder/src/wav_utils.cpp",
+        "pa_recorder/src/wav_utils.h",
+      ]
+
+      configs = []
+
+      deps = [
+        "//third_party/googletest:gtest",
       ]
       libs = [ "pulse", "pulse-simple", "m" ]
     }
