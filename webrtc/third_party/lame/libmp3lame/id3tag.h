@@ -2,6 +2,7 @@
 #ifndef LAME_ID3_H
 #define LAME_ID3_H
 
+#include <inttypes.h>
 
 #define CHANGED_FLAG    (1U << 0)
 #define ADD_V2_FLAG     (1U << 1)

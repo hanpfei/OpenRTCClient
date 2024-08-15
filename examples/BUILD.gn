@@ -17,6 +17,7 @@ group("examples") {
       ":loop_connect",
       ":media_test",
       "//third_party/soundtouch:soundstretch",
+      "//third_party/lame:libmp3lame",
     ]
   }
 
@@ -25,6 +26,8 @@ group("examples") {
       ":audio_mix",
       ":pa_player",
       ":pa_recorder",
+      ":mp3_encoder",
+      ":mp3_decoder",
     ]
   }
 }
@@ -376,6 +379,52 @@ if (is_linux || is_win || is_mac || is_android) {
 
       deps = [
         "//third_party/googletest:gtest",
+      ]
+      libs = [ "pulse", "pulse-simple", "m" ]
+    }
+
+    rtc_executable("mp3_encoder") {
+      visibility = [ "*" ]
+      testonly = true
+
+      sources = [
+        "mp3_encoder/src/audio_wav_file_writer.cpp",
+        "mp3_encoder/src/audio_wav_file_writer.h",
+        "mp3_encoder/src/main.cpp",
+        "mp3_encoder/src/pa_recorder.cpp",
+        "mp3_encoder/src/pa_recorder.h",
+        "mp3_encoder/src/wav_utils.cpp",
+        "mp3_encoder/src/wav_utils.h",
+      ]
+
+      configs = []
+
+      deps = [
+        "//third_party/googletest:gtest",
+        "//third_party/lame:libmp3lame",
+      ]
+      libs = [ "pulse", "pulse-simple", "m" ]
+    }
+
+    rtc_executable("mp3_decoder") {
+      visibility = [ "*" ]
+      testonly = true
+
+      sources = [
+        "mp3_decoder/src/main.cpp",
+        "mp3_decoder/src/pulseaudio_player.cpp",
+        "mp3_decoder/src/pulseaudio_player.h",
+        "mp3_decoder/src/wav_pcm_file_parser.cpp",
+        "mp3_decoder/src/wav_pcm_file_parser.h",
+        "mp3_decoder/src/wav_utils.cpp",
+        "mp3_decoder/src/wav_utils.h",
+      ]
+
+      configs = []
+
+      deps = [
+        "//third_party/googletest:gtest",
+        "//third_party/lame:libmp3lame",
       ]
       libs = [ "pulse", "pulse-simple", "m" ]
     }
