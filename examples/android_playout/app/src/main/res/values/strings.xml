@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Android Playout</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="start_play">Start playout</string>
+    <string name="stop_play">Stop playout</string>
+    <string name="audio_playout">Audio Playout</string>
+</resources>
