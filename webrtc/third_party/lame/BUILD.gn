@@ -42,14 +42,6 @@ static_library("libmp3lame") {
     "libmp3lame/fft.h",
     "libmp3lame/gain_analysis.c",
     "libmp3lame/gain_analysis.h",
-#    "libmp3lame/i386/choose_table.nas",
-#    "libmp3lame/i386/cpu_feat.nas",
-#    "libmp3lame/i386/fft3dn.nas",
-#    "libmp3lame/i386/fftfpu.nas",
-#    "libmp3lame/i386/fft.nas",
-#    "libmp3lame/i386/fftsse.nas",
-#    "libmp3lame/i386/ffttbl.nas",
-#    "libmp3lame/i386/nasm.h",
     "libmp3lame/id3tag.c",
     "libmp3lame/id3tag.h",
     "libmp3lame/l3side.h",
@@ -90,7 +82,6 @@ static_library("libmp3lame") {
   mpglib_sources = [
     "mpglib/common.c",
     "mpglib/common.h",
-
     "mpglib/huffman.h",
     "mpglib/interface.c",
     "mpglib/interface.h",
@@ -132,28 +123,38 @@ static_library("libmp3lame") {
 ###############################################################################
 # Executables
 
-#if (current_toolchain == host_toolchain) {
-#  executable("soundstretch") {
-#    sources = [
-#      "source/SoundStretch/main.cpp",
-#      "source/SoundStretch/RunParameters.cpp",
-#      "source/SoundStretch/RunParameters.h",
-#      "source/SoundStretch/SS_CharTypes.h",
-#      "source/SoundStretch/WavFile.cpp",
-#      "source/SoundStretch/WavFile.h",
-#    ]
-#    configs -= [ "//build/config/compiler:chromium_code" ]
-#    configs += [ "//build/config/compiler:no_chromium_code" ]
-#    if (set_opt_level) {
-#      configs -= [ "//build/config/compiler:default_optimization" ]
-#      configs += [ "//build/config/compiler:optimize_max" ]
-#    }
+if (current_toolchain == host_toolchain) {
+  executable("lame") {
+    sources = [
+      "frontend/brhist.c",
+      "frontend/brhist.h",
+      "frontend/console.c",
+      "frontend/console.h",
+      "frontend/get_audio.c",
+      "frontend/get_audio.h",
+      "frontend/lame_main.c",
+      "frontend/lametime.c",
+      "frontend/lametime.h",
+      "frontend/main.c",
+      "frontend/main.h",
+      "frontend/parse.c",
+      "frontend/parse.h",
+      "frontend/timestatus.c",
+      "frontend/timestatus.h",
+    ]
 
-#    deps = [
-#      ":libsoundtouch",
-#    ]
-#    configs += [ ":libsoundtouch_config" ]
-#    configs += [ ":libsoundtouch_config_internal" ]
-#    visibility = [ "*:*" ]
-#  }
-#}
+    configs -= [ "//build/config/compiler:chromium_code" ]
+    configs += [ "//build/config/compiler:no_chromium_code" ]
+    if (set_opt_level) {
+      configs -= [ "//build/config/compiler:default_optimization" ]
+      configs += [ "//build/config/compiler:optimize_max" ]
+    }
+
+    deps = [
+      ":libmp3lame",
+    ]
+    configs += [ ":libmp3lame_config" ]
+    configs += [ ":libmp3lame_config_internal" ]
+    visibility = [ "*:*" ]
+  }
+}

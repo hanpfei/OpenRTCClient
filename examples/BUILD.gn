@@ -414,10 +414,6 @@ if (is_linux || is_win || is_mac || is_android) {
         "mp3_decoder/src/main.cpp",
         "mp3_decoder/src/pulseaudio_player.cpp",
         "mp3_decoder/src/pulseaudio_player.h",
-        "mp3_decoder/src/wav_pcm_file_parser.cpp",
-        "mp3_decoder/src/wav_pcm_file_parser.h",
-        "mp3_decoder/src/wav_utils.cpp",
-        "mp3_decoder/src/wav_utils.h",
       ]
 
       configs = []
