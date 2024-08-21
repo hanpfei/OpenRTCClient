@@ -17,6 +17,7 @@ group("examples") {
       ":loop_connect",
       ":media_test",
       "//third_party/soundtouch:soundstretch",
+      "//third_party/fdk-aac:aac-enc",
       "//third_party/lame:libmp3lame",
     ]
   }
